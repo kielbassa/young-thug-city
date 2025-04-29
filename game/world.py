@@ -29,6 +29,7 @@ class World:
         self.world = self.create_world()
 
         self.temp_tile = None
+        self.examine_tile = None
 
     def update(self, clock, camera):
         # Update animation timer and frame
@@ -38,13 +39,16 @@ class World:
             self.animation_frame = (self.animation_frame + 1) % len(self.water_frames)
             self.animation_timer = 0
 
-
-        # placing objects
         mouse_pos = pg.mouse.get_pos()
         mouse_action = pg.mouse.get_pressed()
-        mouse_tile_pos = pg.mouse.get_pos()
+
+        if mouse_action[2]:
+            self.examine_tile = None
+            self.hud.examined_tile = None
+
         self.temp_tile = None
         if self.hud.selected_tile is not None:
+            # placing objects
             grid_pos = self.mouse_to_grid(mouse_pos[0], mouse_pos[1], camera.scroll)
 
             if self.can_place_tile(grid_pos):
@@ -54,17 +58,30 @@ class World:
                 render_pos = self.world[grid_pos[0]][grid_pos[1]]["render_pos"]
                 iso_poly = self.world[grid_pos[0]][grid_pos[1]]["iso_poly"]
                 buildable = self.world[grid_pos[0]][grid_pos[1]]["buildable"]
+                empty = self.world[grid_pos[0]][grid_pos[1]]["empty"]
 
                 self.temp_tile = {
                     "image": img,
                     "render_pos": render_pos,
                     "iso_poly": iso_poly,
-                    "buildable": buildable
+                    "buildable": buildable,
+                    "empty": empty
                 }
 
                 if mouse_action[0] and buildable:
                     self.world[grid_pos[0]][grid_pos[1]]["tile"] = self.hud.selected_tile["name"]
                     self.world[grid_pos[0]][grid_pos[1]]["buildable"] = False
+                    self.world[grid_pos[0]][grid_pos[1]]["empty"] = False
+        else:
+            # navigation and selection
+            grid_pos = self.mouse_to_grid(mouse_pos[0], mouse_pos[1], camera.scroll)
+            if self.can_place_tile(grid_pos):
+                empty = self.world[grid_pos[0]][grid_pos[1]]["empty"]
+                if mouse_action[0] and not empty:
+                    self.examine_tile = grid_pos
+                    self.hud.examined_tile = self.world[grid_pos[0]][grid_pos[1]]
+
+
 
     def draw(self, screen, camera):
         screen.blit(self.grass_tiles, (camera.scroll.x, camera.scroll.y))
@@ -76,7 +93,8 @@ class World:
                 if tile != "":
                     if tile == "water":
                         # Render animated water frame
-                        water_frame = self.water_frames[self.animation_frame]
+
+                        water_frame = self.water_frames[self.animation_frame % len(self.water_frames)]
                         screen.blit(water_frame,
                                     (render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
                                     render_pos[1] - (water_frame.get_height() - 2 * TILE_SIZE) + camera.scroll.y))
@@ -85,6 +103,14 @@ class World:
                         screen.blit(self.tiles[tile],
                                     (render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
                                     render_pos[1] - (self.tiles[tile].get_height() - 2 * TILE_SIZE) + camera.scroll.y))
+                        if self.examine_tile is not None:
+                            if (x==self.examine_tile[0] and y==self.examine_tile[1]):
+                                mask = pg.mask.from_surface(self.tiles[tile]).outline()
+                                mask = [(x + render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
+                                        y + render_pos[1] - (self.tiles[tile].get_height() - 2 * TILE_SIZE) + camera.scroll.y
+                                        ) for x, y in mask]
+                                pg.draw.polygon(screen, (255, 255, 255), mask, 3)
+
         if self.temp_tile is not None:
             iso_poly = self.temp_tile["iso_poly"]
             iso_poly = [(x + self.grass_tiles.get_width()/2 + camera.scroll.x, y - (self.temp_tile["image"].get_height() - 2.5*TILE_SIZE) + camera.scroll.y) for x, y in iso_poly]
@@ -130,7 +156,7 @@ class World:
 
             # Multiple octaves of Perlin noise
             elevation = 0
-            amplitude = 1.0
+            amplitude = 1.1
             frequency = 1.0
             persistence = 0.5
             octaves = 2
@@ -187,7 +213,8 @@ class World:
                 "tile": tile,
                 "elevation": elevation,
                 "moisture": moisture,
-                "buildable": True if tile in ["","trees"] else False
+                "buildable": True if tile in ["","trees"] else False,
+                "empty": True if tile in ["","mud","water"] else False
             }
 
             return out
@@ -211,14 +238,13 @@ class World:
 
     def can_place_tile(self, grid_pos):
         mouse_on_panel = False
-        for rect in [self.hud.resources_rect, self.hud.build_rect, self.hud.select_rect, self.hud.select_rect]:
+        for rect in [self.hud.resources_rect, self.hud.build_rect, self.hud.select_rect]:
             if rect.collidepoint(pg.mouse.get_pos()):
                 mouse_on_panel = True
-            world_bounds = (0 <= grid_pos[0] < self.grid_length_x) and (0 <= grid_pos[1] < self.grid_length_y)
-        if world_bounds and not mouse_on_panel:
-            return True
-        else:
-            return False
+                break
+
+        world_bounds = (0 <= grid_pos[0] < self.grid_length_x) and (0 <= grid_pos[1] < self.grid_length_y)
+        return world_bounds and not mouse_on_panel
 
     def load_water_frames(self):
             # Load your water animation frames
