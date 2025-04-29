@@ -1,7 +1,7 @@
 import pygame as pg
 import sys
 from .world import World
-from .settings import TILE_SIZE
+from .settings import TILE_SIZE, WORLD_SIZE
 from .utils import draw_text
 from .camera import Camera
 from .hud import Hud
@@ -13,7 +13,7 @@ class Game:
         self.width, self.height = screen.get_size()
 
         # world
-        self.world = World(30,30, self.width, self.height)
+        self.world = World(WORLD_SIZE, WORLD_SIZE, self.width, self.height)
 
         # camera
         self.camera = Camera(self.width, self.height)

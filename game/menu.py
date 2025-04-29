@@ -17,12 +17,15 @@ class Menu:
         self.button_rect = pg.Rect(self.button_x, self.button_y,
                                   self.button_width, self.button_height)
 
+        # load click sound
+        self.click_sound = pg.mixer.Sound('assets/audio/click.wav')
+
         # Load splash image
         try:
             self.splash_img = pg.image.load('assets/graphics/splashscreen.png')
             # Scale image to be slightly smaller to leave room for text
-            scaled_height = self.screen.get_height() * 0.7  # 70% of screen height
-            scaled_width = self.screen.get_width() * 0.7   # 70% of screen width
+            scaled_height = self.screen.get_height() * 1  # 70% of screen height
+            scaled_width = self.screen.get_width() * 1   # 70% of screen width
             self.splash_img = pg.transform.scale(self.splash_img,
                                                (int(scaled_width),
                                                 int(scaled_height)))
@@ -74,9 +77,11 @@ class Menu:
                     return False  # Signal to quit game
                 elif event.type == pg.MOUSEBUTTONDOWN:
                     if self.button_rect.collidepoint(event.pos):
+                        self.click_sound.play()
                         return True  # Signal to start game
                 elif event.type == pg.KEYDOWN:
                     if event.key == pg.K_ESCAPE:
+                        self.click_sound.play()
                         return False  # Signal to quit game
 
             self.clock.tick(60)

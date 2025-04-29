@@ -88,13 +88,12 @@ class Hud:
             pos += self.width*0.06
 
     def load_images(self):
-        grass = pg.image.load("assets/graphics/grass.png").convert_alpha()
-        log = pg.image.load("assets/graphics/log.png").convert_alpha()
+        trees = pg.image.load("assets/graphics/trees.png").convert_alpha()
         rock = pg.image.load("assets/graphics/rock.png").convert_alpha()
         residential_building = pg.image.load("assets/graphics/residential_building.png").convert_alpha()
         factory = pg.image.load("assets/graphics/factory.png").convert_alpha()
 
-        return {"residential_building": residential_building, "factory": factory, "rock": rock, "grass": grass, "log": log}
+        return {"residential_building": residential_building, "factory": factory, "rock": rock, "trees": trees}
 
 
     def scale_image(self, image, w=None, h=None):
