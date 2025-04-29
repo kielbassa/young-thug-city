@@ -4,6 +4,7 @@ from .world import World
 from .settings import TILE_SIZE
 from .utils import draw_text
 from .camera import Camera
+from .hud import Hud
 
 class Game:
     def __init__(self, screen, clock):
@@ -16,6 +17,9 @@ class Game:
 
         # camera
         self.camera = Camera(self.width, self.height)
+
+        # hud
+        self.hud = Hud(self.width, self.height)
 
     def run(self):
         self.playing = True
@@ -36,6 +40,7 @@ class Game:
                     sys.exit()
     def update(self):
         self.camera.update()
+        self.hud.update()
 
     def draw(self):
         self.screen.fill((0, 0, 0))
@@ -56,6 +61,8 @@ class Game:
                 # p = self.world.world[x][y]["iso_poly"]
                 # p = [(x + self.width/2, y+self.height/4) for x,y in p] # move the grid to the center
                 # pg.draw.polygon(self.screen, (255, 0, 0), p, 1)
+
+        self.hud.draw(self.screen)
 
         draw_text(self.screen,"fps={}".format(round(self.clock.get_fps())),25,(255,255,255),(15, 15))
         pg.display.flip()

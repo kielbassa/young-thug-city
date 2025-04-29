@@ -46,7 +46,10 @@ class World:
         perlin = 100 * noise.pnoise2(grid_x/self.perlin_scale, grid_y/self.perlin_scale)
 
         if(perlin >= 20) or (perlin <= -35):
-            tile = "tree"
+            if r>=50:
+                tile = "tree"
+            else:
+                tile = ""
         else:
             if r == 2:
                 tile = "rock"
