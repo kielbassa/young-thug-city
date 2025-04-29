@@ -5,7 +5,8 @@ import math
 from .settings import TILE_SIZE
 
 class World:
-    def __init__(self, grid_length_x, grid_length_y, width, height, seed=None):
+    def __init__(self, hud, clock, grid_length_x, grid_length_y, width, height, seed=None):
+        self.hud = hud
         self.grid_length_x = grid_length_x
         self.grid_length_y = grid_length_y
         self.width = width
@@ -27,6 +28,33 @@ class World:
         self.tiles = self.load_images()
         self.world = self.create_world()
 
+    def update(self, clock):
+        # Update animation timer and frame
+        current_time = pg.time.get_ticks()
+        self.animation_timer += clock.get_time() / 1000.0  # Convert to seconds
+        if self.animation_timer >= self.animation_speed:
+            self.animation_frame = (self.animation_frame + 1) % len(self.water_frames)
+            self.animation_timer = 0
+
+    def draw(self, screen, camera):
+        screen.blit(self.grass_tiles, (camera.scroll.x, camera.scroll.y))
+
+        for x in range(self.grid_length_x):
+            for y in range(self.grid_length_y):
+                render_pos = self.world[x][y]["render_pos"]
+                tile = self.world[x][y]["tile"]
+                if tile != "":
+                    if tile == "water":
+                        # Render animated water frame
+                        water_frame = self.water_frames[self.animation_frame]
+                        screen.blit(water_frame,
+                                    (render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
+                                    render_pos[1] - (water_frame.get_height() - 2* TILE_SIZE) + camera.scroll.y))
+                    else:
+                        # Render other tiles normally
+                        screen.blit(self.tiles[tile],
+                                    (render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
+                                    render_pos[1] - (self.tiles[tile].get_height() - 2* TILE_SIZE) + camera.scroll.y))
 
     def create_world(self):
         world = []
