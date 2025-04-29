@@ -14,7 +14,7 @@ class Hud:
         self.resources_surface.fill(self.hud_color)
 
         #building hud
-        self.build_surface = pg.Surface((width * 0.15, height* 0.25), pg.SRCALPHA)
+        self.build_surface = pg.Surface((width * 0.15, height* 0.15), pg.SRCALPHA)
         self.build_surface.fill(self.hud_color)
 
         #select hud
@@ -40,7 +40,7 @@ class Hud:
 
 
     def create_build_hud(self):
-        render_pos = [self.width*0.84 + 10, self.height*0.74+10]
+        render_pos = [self.width*0.84 + 10, self.height*0.84+10]
         object_width = self.build_surface.get_width() // 5
 
         tiles = []
@@ -74,7 +74,7 @@ class Hud:
         # recource
         screen.blit(self.resources_surface, (0,0))
         # build hud
-        screen.blit(self.build_surface, (self.width * 0.84, self.height*0.74))
+        screen.blit(self.build_surface, (self.width * 0.84, self.height*0.84))
         # select hud
         screen.blit(self.select_surface, (self.width * 0.35, self.height * 0.79))
 
