@@ -45,19 +45,25 @@ class World:
         r = random.randint(1,100)
         perlin = 100 * noise.pnoise2(grid_x/self.perlin_scale, grid_y/self.perlin_scale)
 
+
         if(perlin >= 20) or (perlin <= -35):
-            if r>=50:
-                tile = "tree"
+            if r == 1:
+                tile = "log"
+            elif r == 2:
+                tile="flowers"
+            elif r>=50:
+                tile = "grass"
             else:
                 tile = ""
         else:
             if r == 2:
                 tile = "rock"
             elif r == 1:
-                tile = "tree"
+                tile = "grass"
+            elif r == 3:
+                tile = "flowers"
             else:
                 tile = ""
-
 
         out = {
             "grid": [grid_x, grid_y],
@@ -76,7 +82,10 @@ class World:
 
     def load_images(self):
         block = pg.image.load("assets/graphics/block.png").convert_alpha()
-        tree = pg.image.load("assets/graphics/tree.png").convert_alpha()
+        grass = pg.image.load("assets/graphics/grass.png").convert_alpha()
+        log = pg.image.load("assets/graphics/log.png").convert_alpha()
         rock = pg.image.load("assets/graphics/rock.png").convert_alpha()
+        grass = pg.image.load("assets/graphics/grass.png").convert_alpha()
+        flowers = pg.image.load("assets/graphics/flowers.png").convert_alpha()
 
-        return {"block": block, "tree": tree, "rock": rock}
+        return {"block": block, "grass": grass, "rock": rock, "log": log, "flowers": flowers}

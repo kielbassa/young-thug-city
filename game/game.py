@@ -13,7 +13,7 @@ class Game:
         self.width, self.height = screen.get_size()
 
         # world
-        self.world = World(50,50, self.width, self.height)
+        self.world = World(30,30, self.width, self.height)
 
         # camera
         self.camera = Camera(self.width, self.height)
@@ -56,7 +56,7 @@ class Game:
                 if tile != "":
                     self.screen.blit(self.world.tiles[tile],
                                     (render_pos[0] + self.world.grass_tiles.get_width()/2 + self.camera.scroll.x,
-                                    render_pos[1] - (self.world.tiles[tile].get_height() - TILE_SIZE) + self.camera.scroll.y))
+                                    render_pos[1] - (self.world.tiles[tile].get_height() - 2* TILE_SIZE) + self.camera.scroll.y))
 
                 # p = self.world.world[x][y]["iso_poly"]
                 # p = [(x + self.width/2, y+self.height/4) for x,y in p] # move the grid to the center
