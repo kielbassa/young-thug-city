@@ -1,10 +1,11 @@
 import pygame as pg
 from game.game import Game
+from game.menu import Menu
 
 def main():
-      # Initialize game variables
+    # Initialize game variables
     running = True
-    playing = True
+    playing = False
 
     pg.init()
     pg.mixer.init()
@@ -14,30 +15,25 @@ def main():
     clock = pg.time.Clock()
 
     # menus
-
+    menu = Menu(screen, clock)
     # implement game
     game = Game(screen, clock)
 
     # Main game loop
     while running:
-        # start menu
-        # Splash screen
-        screen.fill((0, 0, 0))  # Fill screen with black
+        # Show menu and get result
+        playing = menu.draw()
 
-        # Load and display splash image
-        splash_img = pg.image.load('assets/graphics/splashscreen.png')  # Make sure to have this image
-        splash_img = pg.transform.scale(splash_img, (screen.get_width(), screen.get_height()))
-        screen.blit(splash_img, (0, 0))
-        font = pg.font.SysFont(None, 174)
-        text = font.render('Young Thug City welcomes', True, (255, 255, 255))
-        text_rect = text.get_rect(center=(screen.get_width()/2, screen.get_height()/2))
-        screen.blit(text, text_rect)
-        pg.display.flip()
-        pg.time.delay(2000)  # Show splash screen for 2 seconds
+        if not playing:  # If menu returns False, quit the game
+            running = False
+            break
 
-        while playing:
+        if playing:
             # game loop
             game.run()
+            playing = False  # Reset playing when game ends
+
+    pg.quit()
 
 if __name__ == "__main__":
     main()
