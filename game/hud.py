@@ -11,14 +11,17 @@ class Hud:
 
         #resources hud
         self.resources_surface = pg.Surface((width, height*0.02), pg.SRCALPHA)
+        self.resources_rect = self.resources_surface.get_rect(topleft=(0,0))
         self.resources_surface.fill(self.hud_color)
 
         #building hud
         self.build_surface = pg.Surface((width * 0.15, height* 0.15), pg.SRCALPHA)
+        self.build_rect = self.build_surface.get_rect(topleft=(self.width * 0.84, self.height*0.84))
         self.build_surface.fill(self.hud_color)
 
         #select hud
         self.select_surface = pg.Surface((width * 0.3, height* 0.2), pg.SRCALPHA)
+        self.select_rect = self.select_surface.get_rect(topleft=(self.width * 0.35, self.height*0.84))
         self.select_surface.fill(self.hud_color)
 
         self.images = self.load_images()
@@ -66,12 +69,8 @@ class Hud:
 
 
     def draw(self, screen):
-        if self.selected_tile is not None:
-            img = self.selected_tile["image"]
-            img.set_alpha(100)
-            screen.blit(img, pg.mouse.get_pos())
 
-        # recource
+        # resource
         screen.blit(self.resources_surface, (0,0))
         # build hud
         screen.blit(self.build_surface, (self.width * 0.84, self.height*0.84))
@@ -81,7 +80,7 @@ class Hud:
         for tile in self.tiles:
             screen.blit(tile["icon"], tile["rect"].topleft)
 
-        # recources
+        # resources
         pos = self.width - 400
         for resource in ["water:", "electricity:"]:
             draw_text(screen, resource,30,(255,255,255),(pos,0))

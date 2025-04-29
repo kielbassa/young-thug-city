@@ -28,13 +28,43 @@ class World:
         self.tiles = self.load_images()
         self.world = self.create_world()
 
-    def update(self, clock):
+        self.temp_tile = None
+
+    def update(self, clock, camera):
         # Update animation timer and frame
         current_time = pg.time.get_ticks()
         self.animation_timer += clock.get_time() / 1000.0  # Convert to seconds
         if self.animation_timer >= self.animation_speed:
             self.animation_frame = (self.animation_frame + 1) % len(self.water_frames)
             self.animation_timer = 0
+
+
+        # placing objects
+        mouse_pos = pg.mouse.get_pos()
+        mouse_action = pg.mouse.get_pressed()
+        mouse_tile_pos = pg.mouse.get_pos()
+        self.temp_tile = None
+        if self.hud.selected_tile is not None:
+            grid_pos = self.mouse_to_grid(mouse_pos[0], mouse_pos[1], camera.scroll)
+
+            if self.can_place_tile(grid_pos):
+                img = self.hud.selected_tile["image"].copy()
+                img.set_alpha(100)
+
+                render_pos = self.world[grid_pos[0]][grid_pos[1]]["render_pos"]
+                iso_poly = self.world[grid_pos[0]][grid_pos[1]]["iso_poly"]
+                buildable = self.world[grid_pos[0]][grid_pos[1]]["buildable"]
+
+                self.temp_tile = {
+                    "image": img,
+                    "render_pos": render_pos,
+                    "iso_poly": iso_poly,
+                    "buildable": buildable
+                }
+
+                if mouse_action[0] and buildable:
+                    self.world[grid_pos[0]][grid_pos[1]]["tile"] = self.hud.selected_tile["name"]
+                    self.world[grid_pos[0]][grid_pos[1]]["buildable"] = False
 
     def draw(self, screen, camera):
         screen.blit(self.grass_tiles, (camera.scroll.x, camera.scroll.y))
@@ -49,12 +79,25 @@ class World:
                         water_frame = self.water_frames[self.animation_frame]
                         screen.blit(water_frame,
                                     (render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
-                                    render_pos[1] - (water_frame.get_height() - 2* TILE_SIZE) + camera.scroll.y))
+                                    render_pos[1] - (water_frame.get_height() - 2 * TILE_SIZE) + camera.scroll.y))
                     else:
                         # Render other tiles normally
                         screen.blit(self.tiles[tile],
                                     (render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
-                                    render_pos[1] - (self.tiles[tile].get_height() - 2* TILE_SIZE) + camera.scroll.y))
+                                    render_pos[1] - (self.tiles[tile].get_height() - 2 * TILE_SIZE) + camera.scroll.y))
+        if self.temp_tile is not None:
+            iso_poly = self.temp_tile["iso_poly"]
+            iso_poly = [(x + self.grass_tiles.get_width()/2 + camera.scroll.x, y - (self.temp_tile["image"].get_height() - 2.5*TILE_SIZE) + camera.scroll.y) for x, y in iso_poly]
+            if self.temp_tile["buildable"]:
+                pg.draw.polygon(screen, (255, 255, 255), iso_poly, 3)
+            else:
+                pg.draw.polygon(screen, (255, 0, 0), iso_poly, 3)
+            render_pos = self.temp_tile["render_pos"]
+            screen.blit(self.temp_tile["image"],
+                        (
+                            render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
+                            render_pos[1] - (self.temp_tile["image"].get_height() - 2 * TILE_SIZE) + camera.scroll.y)
+                        )
 
     def create_world(self):
         world = []
@@ -143,7 +186,8 @@ class World:
                 "render_pos": [minx, miny],
                 "tile": tile,
                 "elevation": elevation,
-                "moisture": moisture
+                "moisture": moisture,
+                "buildable": True if tile in ["","trees"] else False
             }
 
             return out
@@ -152,6 +196,29 @@ class World:
         iso_x = x - y
         iso_y = (x + y) / 2
         return iso_x, iso_y
+
+    def mouse_to_grid(self, x, y, scroll):
+        # transform to world position (remove camera scroll and offset)
+        world_x = x - scroll.x - self.grass_tiles.get_width()/2
+        world_y = y - scroll.y
+        # transform to cart (inverse of cart_to_iso)
+        cart_y = (2*world_y - world_x)/2
+        cart_x = cart_y + world_x
+        # transform to grid coordinates
+        grid_x = int(cart_x // TILE_SIZE)
+        grid_y = int(cart_y // TILE_SIZE)
+        return grid_x, grid_y
+
+    def can_place_tile(self, grid_pos):
+        mouse_on_panel = False
+        for rect in [self.hud.resources_rect, self.hud.build_rect, self.hud.select_rect, self.hud.select_rect]:
+            if rect.collidepoint(pg.mouse.get_pos()):
+                mouse_on_panel = True
+            world_bounds = (0 <= grid_pos[0] < self.grid_length_x) and (0 <= grid_pos[1] < self.grid_length_y)
+        if world_bounds and not mouse_on_panel:
+            return True
+        else:
+            return False
 
     def load_water_frames(self):
             # Load your water animation frames
@@ -166,6 +233,16 @@ class World:
         rock = pg.image.load("assets/graphics/rock.png").convert_alpha()
         trees = pg.image.load("assets/graphics/trees.png").convert_alpha()
         water = pg.image.load("assets/graphics/water.png").convert_alpha()
-        mud = pg.image.load("assets/graphics/mud.png").convert_alpha()  # Add mud texture
+        mud = pg.image.load("assets/graphics/mud.png").convert_alpha()
+        residential_building = pg.image.load("assets/graphics/residential_building.png").convert_alpha()
+        factory = pg.image.load("assets/graphics/factory.png").convert_alpha()
 
-        return {"block": block, "rock": rock, "trees": trees, "water": water, "mud": mud}
+        return {
+            "block": block,
+            "rock": rock,
+            "trees": trees,
+            "water": water,
+            "mud": mud,
+            "residential_building": residential_building,
+            "factory": factory
+        }

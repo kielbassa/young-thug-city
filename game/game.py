@@ -42,7 +42,7 @@ class Game:
     def update(self):
         self.camera.update()
         self.hud.update()
-        self.world.update(self.clock)
+        self.world.update(self.clock, self.camera)
 
     def draw(self):
         self.screen.fill((0, 0, 0))
