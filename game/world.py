@@ -1,7 +1,6 @@
 import pygame as pg
 import random
 import noise
-import math
 from .settings import TILE_SIZE
 
 class World:
@@ -33,7 +32,6 @@ class World:
 
     def update(self, clock, camera):
         # Update animation timer and frame
-        current_time = pg.time.get_ticks()
         self.animation_timer += clock.get_time() / 1000.0  # Convert to seconds
         if self.animation_timer >= self.animation_speed:
             self.animation_frame = (self.animation_frame + 1) % len(self.water_frames)

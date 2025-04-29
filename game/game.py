@@ -1,7 +1,7 @@
 import pygame as pg
 import sys
 from .world import World
-from .settings import TILE_SIZE, WORLD_SIZE
+from .settings import WORLD_SIZE
 from .utils import draw_text
 from .camera import Camera
 from .hud import Hud
