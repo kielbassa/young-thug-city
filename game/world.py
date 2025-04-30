@@ -1,11 +1,13 @@
-from site import USER_BASE
 import pygame as pg
 import random
 import noise
 from .settings import TILE_SIZE
+from .buildings import Residential_Building, Factory
 
 class World:
-    def __init__(self, hud, clock, grid_length_x, grid_length_y, width, height, seed=None):
+    def __init__(self,resource_manager, entities, hud, clock, grid_length_x, grid_length_y, width, height, seed=None):
+        self.resource_manager = resource_manager
+        self.entities = entities
         self.hud = hud
         self.grid_length_x = grid_length_x
         self.grid_length_y = grid_length_y
@@ -27,6 +29,8 @@ class World:
         self.grass_tiles = pg.Surface((grid_length_x * TILE_SIZE * 2, grid_length_y * TILE_SIZE + 2 * TILE_SIZE)).convert_alpha()
         self.tiles = self.load_images()
         self.world = self.create_world()
+
+        self.buildings = [[None for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
 
         self.temp_tile = None
         self.examine_tile = None
@@ -64,16 +68,27 @@ class World:
                 user_built = self.world[grid_pos[0]][grid_pos[1]]["user_built"]
 
                 self.temp_tile = {
-                    "image": img,
-                    "render_pos": render_pos,
-                    "iso_poly": iso_poly,
-                    "buildable": buildable,
-                    "empty": empty,
-                    "user_built": user_built
-                }
+                        "image": img,
+                        "render_pos": render_pos,
+                        "iso_poly": iso_poly,
+                        "buildable": buildable and self.resource_manager.is_affordable(self.hud.selected_tile["name"]),  # Check if affordable
+                        "empty": empty,
+                        "user_built": user_built
+                    }
 
-                if mouse_action[0] and (buildable or user_built) and self.world[grid_pos[0]][grid_pos[1]]["tile"] != self.hud.selected_tile["name"]:
-                    self.world[grid_pos[0]][grid_pos[1]]["tile"] = self.hud.selected_tile["name"]
+                if (mouse_action[0] and
+                    buildable and
+                    self.buildings[grid_pos[0]][grid_pos[1]] is None and
+                    self.resource_manager.is_affordable(self.hud.selected_tile["name"])):  # Check if affordable
+
+                    ent = None
+                    if self.hud.selected_tile["name"] == "factory":
+                        ent = Factory(render_pos, self.resource_manager)
+                    elif self.hud.selected_tile["name"] == "residential_building":
+                        ent = Residential_Building(render_pos, self.resource_manager)
+
+                    self.entities.append(ent)
+                    self.buildings[grid_pos[0]][grid_pos[1]] = ent
                     self.world[grid_pos[0]][grid_pos[1]]["buildable"] = False
                     self.world[grid_pos[0]][grid_pos[1]]["empty"] = False
                     self.world[grid_pos[0]][grid_pos[1]]["user_built"] = True
@@ -83,10 +98,10 @@ class World:
             # navigation and selection
             grid_pos = self.mouse_to_grid(mouse_pos[0], mouse_pos[1], camera.scroll)
             if self.can_place_tile(grid_pos):
-                empty = self.world[grid_pos[0]][grid_pos[1]]["empty"]
-                if mouse_action[0] and not empty:
+                building = self.buildings[grid_pos[0]][grid_pos[1]]
+                if mouse_action[0] and (building is not None):
                     self.examine_tile = grid_pos
-                    self.hud.examined_tile = self.world[grid_pos[0]][grid_pos[1]]
+                    self.hud.examined_tile = building
 
 
 
@@ -96,6 +111,7 @@ class World:
         for x in range(self.grid_length_x):
             for y in range(self.grid_length_y):
                 render_pos = self.world[x][y]["render_pos"]
+                # draw world tiles
                 tile = self.world[x][y]["tile"]
                 if tile != "":
                     if tile == "water":
@@ -110,13 +126,20 @@ class World:
                         screen.blit(self.tiles[tile],
                                     (render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
                                     render_pos[1] - (self.tiles[tile].get_height() - 2 * TILE_SIZE) + camera.scroll.y))
-                        if self.examine_tile is not None:
-                            if (x==self.examine_tile[0] and y==self.examine_tile[1]):
-                                mask = pg.mask.from_surface(self.tiles[tile]).outline()
-                                mask = [(x + render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
-                                        y + render_pos[1] - (self.tiles[tile].get_height() - 2 * TILE_SIZE) + camera.scroll.y
-                                        ) for x, y in mask]
-                                pg.draw.polygon(screen, (255, 255, 255), mask, 3)
+
+                # draw buildings
+                building = self.buildings[x][y]
+                if building is not None:
+                    screen.blit(building.image,
+                                (render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
+                                render_pos[1] - (building.image.get_height() - 2 * TILE_SIZE) + camera.scroll.y))
+                    if self.examine_tile is not None:
+                        if (x==self.examine_tile[0] and y==self.examine_tile[1]):
+                            mask = pg.mask.from_surface(building.image).outline()
+                            mask = [(x + render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
+                                    y + render_pos[1] - (building.image.get_height() - 2 * TILE_SIZE) + camera.scroll.y
+                                    ) for x, y in mask]
+                            pg.draw.polygon(screen, (255, 255, 255), mask, 3)
 
         if self.temp_tile is not None:
             iso_poly = self.temp_tile["iso_poly"]

@@ -3,7 +3,8 @@ from .utils import draw_text
 
 class Hud:
 
-    def __init__(self,width,height):
+    def __init__(self,resource_manager,width,height):
+        self.resource_manager = resource_manager
         self.width = width
         self.height = height
 
@@ -38,7 +39,11 @@ class Hud:
             self.selected_tile = None
 
         for tile in self.tiles:
-            if tile["rect"].collidepoint(mouse_pos):
+            if self.resource_manager.is_affordable(tile["name"]):
+                tile["affordable"] = True
+            else:
+                tile["affordable"] = False
+            if tile["rect"].collidepoint(mouse_pos) and tile["affordable"]:
                 if mouse_action[0]:
                     self.selected_tile = tile
 
@@ -60,7 +65,8 @@ class Hud:
                     "name": image_name,
                     "icon": image_scale,
                     "image": self.images[image_name],
-                    "rect": rect
+                    "rect": rect,
+                    "affordable": True
                 }
             )
 
@@ -78,26 +84,29 @@ class Hud:
         if self.examined_tile is not None:
             w, h = self.select_rect.width, self.select_rect.height
             screen.blit(self.select_surface, (self.width * 0.35, self.height * 0.79))
-            img = self.images[self.examined_tile["tile"]].copy()
-            img_scale = self.scale_image(img, h=h*0.9)
-            screen.blit(img_scale, (self.width * 0.35 + 10, self.height * 0.79 + 10))
-            draw_text(screen, self.examined_tile["tile"],40,(255,255,255),self.select_rect.center)
+            img = self.examined_tile.image.copy()
+            img_scale = self.scale_image(img, h=h*0.7)
+            screen.blit(img_scale, (self.width * 0.35 + 10, self.height * 0.79 + 40))
+            draw_text(screen, self.examined_tile.name,40,(255,255,255),self.select_rect.topleft)
+
         for tile in self.tiles:
-            screen.blit(tile["icon"], tile["rect"].topleft)
+            icon = tile["icon"].copy()
+            if not tile["affordable"]:
+                icon.set_alpha(100)
+            screen.blit(icon, tile["rect"].topleft)
 
         # resources
-        pos = self.width - 400
-        for resource in ["water:", "electricity:"]:
-            draw_text(screen, resource,30,(255,255,255),(pos,0))
-            pos += self.width*0.06
+        pos = self.width - 600
+        for resource, resource_value in self.resource_manager.resources.items():
+            txt = resource + ": " + str(resource_value)
+            draw_text(screen, txt, 30, (255, 255, 255), (pos, 0))
+            pos += self.width * 0.1
 
     def load_images(self):
-        trees = pg.image.load("assets/graphics/trees.png").convert_alpha()
-        rock = pg.image.load("assets/graphics/rock.png").convert_alpha()
         residential_building = pg.image.load("assets/graphics/residential_building.png").convert_alpha()
         factory = pg.image.load("assets/graphics/factory.png").convert_alpha()
 
-        return {"residential_building": residential_building, "factory": factory, "rock": rock, "trees": trees}
+        return {"residential_building": residential_building, "factory": factory}
 
 
     def scale_image(self, image, w=None, h=None):

@@ -5,6 +5,7 @@ from .settings import WORLD_SIZE
 from .utils import draw_text
 from .camera import Camera
 from .hud import Hud
+from .resource_manager import ResourceManager
 
 class Game:
     def __init__(self, screen, clock):
@@ -12,11 +13,17 @@ class Game:
         self.clock = clock
         self.width, self.height = screen.get_size()
 
+        # entities
+        self.entities = []
+
+        # resource manager
+        self.resource_manager = ResourceManager()
+
         # hud
-        self.hud = Hud(self.width, self.height)
+        self.hud = Hud(self.resource_manager,self.width, self.height)
 
         # world
-        self.world = World(self.hud, self.clock, WORLD_SIZE, WORLD_SIZE, self.width, self.height)
+        self.world = World(self.resource_manager, self.entities, self.hud, self.clock, WORLD_SIZE, WORLD_SIZE, self.width, self.height)
 
         # camera
         self.camera = Camera(self.width, self.height, self.hud)
@@ -41,6 +48,8 @@ class Game:
 
     def update(self):
         self.camera.update()
+        for entity in self.entities:
+            entity.update()
         self.hud.update()
         self.world.update(self.clock, self.camera)
 
