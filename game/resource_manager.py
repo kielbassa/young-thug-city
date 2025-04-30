@@ -2,7 +2,6 @@ import pygame as pg
 
 class ResourceManager:
     def __init__(self):
-
         # resources
         self.resources = {
             "electricity": 100,
