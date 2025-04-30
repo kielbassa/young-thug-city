@@ -1,11 +1,13 @@
 import pygame as pg
 import sys
+import random
 from .world import World
 from .settings import WORLD_SIZE
 from .utils import draw_text
 from .camera import Camera
 from .hud import Hud
 from .resource_manager import ResourceManager
+from .citizens import Citizen
 
 class Game:
     def __init__(self, screen, clock):
@@ -24,6 +26,8 @@ class Game:
 
         # world
         self.world = World(self.resource_manager, self.entities, self.hud, self.clock, WORLD_SIZE, WORLD_SIZE, self.width, self.height)
+        # citizens
+        for _ in range(10): Citizen(self.world.world[random.randint(0, WORLD_SIZE//2)][random.randint(0, WORLD_SIZE//2)], self.world)
 
         # camera
         self.camera = Camera(self.width, self.height, self.hud)
