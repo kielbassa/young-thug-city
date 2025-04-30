@@ -30,6 +30,9 @@ class World:
         self.temp_tile = None
         self.examine_tile = None
 
+        # load click sound
+        self.click_sound = pg.mixer.Sound('assets/audio/click.wav')
+
     def update(self, clock, camera):
         # Update animation timer and frame
         self.animation_timer += clock.get_time() / 1000.0  # Convert to seconds
@@ -70,6 +73,7 @@ class World:
                     self.world[grid_pos[0]][grid_pos[1]]["tile"] = self.hud.selected_tile["name"]
                     self.world[grid_pos[0]][grid_pos[1]]["buildable"] = False
                     self.world[grid_pos[0]][grid_pos[1]]["empty"] = False
+                    self.click_sound.play()
         else:
             # navigation and selection
             grid_pos = self.mouse_to_grid(mouse_pos[0], mouse_pos[1], camera.scroll)
