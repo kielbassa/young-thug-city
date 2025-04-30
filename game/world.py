@@ -1,3 +1,4 @@
+from site import USER_BASE
 import pygame as pg
 import random
 import noise
@@ -60,20 +61,24 @@ class World:
                 iso_poly = self.world[grid_pos[0]][grid_pos[1]]["iso_poly"]
                 buildable = self.world[grid_pos[0]][grid_pos[1]]["buildable"]
                 empty = self.world[grid_pos[0]][grid_pos[1]]["empty"]
+                user_built = self.world[grid_pos[0]][grid_pos[1]]["user_built"]
 
                 self.temp_tile = {
                     "image": img,
                     "render_pos": render_pos,
                     "iso_poly": iso_poly,
                     "buildable": buildable,
-                    "empty": empty
+                    "empty": empty,
+                    "user_built": user_built
                 }
 
-                if mouse_action[0] and buildable:
+                if mouse_action[0] and (buildable or user_built) and self.world[grid_pos[0]][grid_pos[1]]["tile"] != self.hud.selected_tile["name"]:
                     self.world[grid_pos[0]][grid_pos[1]]["tile"] = self.hud.selected_tile["name"]
                     self.world[grid_pos[0]][grid_pos[1]]["buildable"] = False
                     self.world[grid_pos[0]][grid_pos[1]]["empty"] = False
+                    self.world[grid_pos[0]][grid_pos[1]]["user_built"] = True
                     self.click_sound.play()
+
         else:
             # navigation and selection
             grid_pos = self.mouse_to_grid(mouse_pos[0], mouse_pos[1], camera.scroll)
@@ -118,6 +123,8 @@ class World:
             iso_poly = [(x + self.grass_tiles.get_width()/2 + camera.scroll.x, y - (self.temp_tile["image"].get_height() - 2.5*TILE_SIZE) + camera.scroll.y) for x, y in iso_poly]
             if self.temp_tile["buildable"]:
                 pg.draw.polygon(screen, (255, 255, 255), iso_poly, 3)
+            elif self.temp_tile["user_built"]:
+                pg.draw.polygon(screen, (0, 0, 255), iso_poly, 3)
             else:
                 pg.draw.polygon(screen, (255, 0, 0), iso_poly, 3)
             render_pos = self.temp_tile["render_pos"]
@@ -216,7 +223,8 @@ class World:
                 "elevation": elevation,
                 "moisture": moisture,
                 "buildable": True if tile in ["","trees"] else False,
-                "empty": True if tile in ["","mud","water"] else False
+                "empty": True if tile in ["","mud","water"] else False,
+                "user_built": False
             }
 
             return out
