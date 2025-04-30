@@ -7,21 +7,27 @@ from pathfinding.finder.a_star import AStarFinder
 class Citizen:
 
     def __init__(self, tile, world):
-        self.world = world
-        self.world.entities.append(self)
-        image = pg.image.load("assets/graphics/citizen.png").convert_alpha()
-        self.name = "citizen"
-        self.image = pg.transform.scale(image, (image.get_width()*2, image.get_height()*2))
-        self.tile = tile
+            self.world = world
+            self.world.entities.append(self)
+            image = pg.image.load("assets/graphics/citizen.png").convert_alpha()
+            self.name = "citizen"
+            self.image = pg.transform.scale(image, (image.get_width()*2, image.get_height()*2))
+            self.tile = tile
 
-        # pathfinding
-        self.world.citizens[tile["grid"][0]][tile["grid"][1]] = self
-        self.move_timer = pg.time.get_ticks()
+            # pathfinding
+            self.world.citizens[tile["grid"][0]][tile["grid"][1]] = self
+            self.move_timer = pg.time.get_ticks()
 
-        self.create_path()
+            # Movement interpolation
+            self.movement_speed = 0.1  # Adjust this to control movement speed
+            self.current_pos = pg.Vector2(tile["render_pos"][0], tile["render_pos"][1])
+            self.target_pos = pg.Vector2(tile["render_pos"][0], tile["render_pos"][1])
+            self.is_moving = False
+
+            self.create_path()
 
     def create_path(self):
-        max_attempts = 50  # Limit the number of attempts to find a path
+        max_attempts = 50
         attempts = 0
 
         while attempts < max_attempts:
@@ -29,14 +35,27 @@ class Citizen:
             y = random.randint(0, self.world.grid_length_y - 1)
             dest_tile = self.world.world[x][y]
 
-            if dest_tile["walkable"]:  # Only choose walkable destinations
-                self.grid = Grid(matrix=self.world.collision_matrix)
+            # Check if destination is walkable and not occupied by another citizen
+            if dest_tile["walkable"] and self.world.citizens[x][y] is None:
+                # Create temporary collision matrix that includes other citizens
+                temp_collision_matrix = [row[:] for row in self.world.collision_matrix]
+
+                # Mark positions of all citizens as non-walkable
+                for i in range(self.world.grid_length_x):
+                    for j in range(self.world.grid_length_y):
+                        if self.world.citizens[i][j] is not None:
+                            temp_collision_matrix[j][i] = 0
+
+                # Exception for current citizen's position
+                current_pos = self.tile["grid"]
+                temp_collision_matrix[current_pos[1]][current_pos[0]] = 1
+
+                self.grid = Grid(matrix=temp_collision_matrix)
                 self.start = self.grid.node(self.tile["grid"][0], self.tile["grid"][1])
                 self.end = self.grid.node(x, y)
                 finder = AStarFinder(diagonal_movement=DiagonalMovement.never)
                 path, runs = finder.find_path(self.start, self.end, self.grid)
 
-                # Only accept the path if one was found
                 if len(path) > 0:
                     self.path_index = 0
                     self.path = path
@@ -49,13 +68,34 @@ class Citizen:
         self.path_index = 0
 
     def change_tile(self, new_tile):
+        # Remove citizen from current tile
         self.world.citizens[self.tile["grid"][0]][self.tile["grid"][1]] = None
-        self.world.citizens[new_tile[0]][new_tile[1]] = self
-        self.tile = self.world.world[new_tile[0]][new_tile[1]]
+
+        # Only move if the new tile is not occupied
+        if self.world.citizens[new_tile[0]][new_tile[1]] is None:
+            self.world.citizens[new_tile[0]][new_tile[1]] = self
+            self.tile = self.world.world[new_tile[0]][new_tile[1]]
+            self.target_pos = pg.Vector2(self.tile["render_pos"][0], self.tile["render_pos"][1])
+            self.is_moving = True
+        else:
+            # If tile is occupied, stay in current tile
+            self.world.citizens[self.tile["grid"][0]][self.tile["grid"][1]] = self
+            self.create_path()  # Find a new path
 
     def update(self):
         now = pg.time.get_ticks()
-        if now - self.move_timer > 1000:
+
+        # Handle movement interpolation
+        if self.is_moving:
+            direction = self.target_pos - self.current_pos
+            if direction.length() > 1:  # If not close enough to target
+                direction = direction.normalize()
+                self.current_pos += direction * self.movement_speed * self.world.clock.get_time()
+            else:
+                self.current_pos = self.target_pos.copy()
+                self.is_moving = False
+
+        if now - self.move_timer > 1000 and not self.is_moving:
             # Check if we have a valid path and haven't reached the end
             if self.path and self.path_index < len(self.path):
                 node = self.path[self.path_index]

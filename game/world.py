@@ -9,6 +9,7 @@ class World:
         self.resource_manager = resource_manager
         self.entities = entities
         self.hud = hud
+        self.clock = clock
         self.grid_length_x = grid_length_x
         self.grid_length_y = grid_length_y
         self.width = width
@@ -150,8 +151,8 @@ class World:
                 citizen = self.citizens[x][y]
                 if citizen is not None:
                     screen.blit(citizen.image,
-                                (render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
-                                render_pos[1] - (citizen.image.get_height() - 2 * TILE_SIZE) + camera.scroll.y))
+                                (citizen.current_pos.x + self.grass_tiles.get_width()/2 + camera.scroll.x,
+                                 citizen.current_pos.y - (citizen.image.get_height() - 1.5*TILE_SIZE) + camera.scroll.y))
 
 
         if self.temp_tile is not None:
@@ -187,8 +188,6 @@ class World:
 
             # Position text near cursor (offset by 20 pixels)
             text_rect.topleft = (mouse_pos[0] + 20, mouse_pos[1] + 20)
-
-            # Draw text with a dark background for better visibility
             bg_rect = text_rect.copy()
             bg_rect.inflate_ip(10, 10)  # Make background slightly larger than text
             pg.draw.rect(screen, (0, 0, 0, 180), bg_rect)
