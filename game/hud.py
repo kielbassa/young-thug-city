@@ -70,7 +70,6 @@ class Hud:
 
 
     def draw(self, screen):
-
         # resource
         screen.blit(self.resources_surface, (0,0))
         # build hud

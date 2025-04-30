@@ -19,7 +19,7 @@ class Game:
         self.world = World(self.hud, self.clock, WORLD_SIZE, WORLD_SIZE, self.width, self.height)
 
         # camera
-        self.camera = Camera(self.width, self.height)
+        self.camera = Camera(self.width, self.height, self.hud)
 
     def run(self):
         self.playing = True

@@ -1,21 +1,23 @@
 import pygame as pg
+from .settings import CAMERA_SPEED
 
 class Camera:
-    def __init__(self, width, height):
+    def __init__(self, width, height, hud):
         self.width = width
         self.height = height
+        self.hud = hud
 
         self.scroll = pg.Vector2(0, 0)
         self.dx = 0
         self.dy = 0
-        self.max_speed = 20  # Max speed at edge
+        self.max_speed = CAMERA_SPEED  # Max speed at edge
 
     def update(self):
         mouse_x, mouse_y = pg.mouse.get_pos()
 
         # Define edge zones as 10% of width/height
-        edge_x = self.width * 0.1
-        edge_y = self.height * 0.1
+        edge_x = self.width * 0.03
+        edge_y = self.height * 0.03
 
         self.dx = 0
         self.dy = 0
@@ -36,6 +38,12 @@ class Camera:
             proximity = (mouse_y - (self.height - edge_y)) / edge_y
             self.dy = -self.max_speed * proximity
 
-        # Update scroll
-        self.scroll.x += self.dx
-        self.scroll.y += self.dy
+        # Update scroll if not on hud element
+        mouse_on_panel = False
+        for rect in [self.hud.build_rect, self.hud.select_rect]:
+            if rect.collidepoint(pg.mouse.get_pos()):
+                mouse_on_panel = True
+                break
+        if not mouse_on_panel:
+            self.scroll.x += self.dx
+            self.scroll.y += self.dy
