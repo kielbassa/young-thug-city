@@ -22,7 +22,7 @@ class Hud:
 
         #select hud
         self.select_surface = pg.Surface((width * 0.3, height* 0.2), pg.SRCALPHA)
-        self.select_rect = self.select_surface.get_rect(topleft=(self.width * 0.35, self.height*0.84))
+        self.select_rect = self.select_surface.get_rect(topleft=(self.width * 0.35, self.height*0.8))
         self.select_surface.fill(self.hud_color)
 
         self.images = self.load_images()
