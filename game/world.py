@@ -1,6 +1,6 @@
 import pygame as pg
 import random
-import noise
+import perlin_noise as noise
 from .settings import TILE_SIZE
 from .buildings import Residential_Building, Factory, Solar_Panels, Water_Treatment_Plant
 
@@ -210,88 +210,84 @@ class World:
         return world
 
     def grid_to_world(self, grid_x, grid_y):
-            rect = [
-                (grid_x * TILE_SIZE, grid_y * TILE_SIZE),
-                (grid_x * TILE_SIZE + TILE_SIZE, grid_y * TILE_SIZE),
-                (grid_x * TILE_SIZE + TILE_SIZE, grid_y * TILE_SIZE + TILE_SIZE),
-                (grid_x * TILE_SIZE, grid_y * TILE_SIZE + TILE_SIZE),
-            ]
+        rect = [
+            (grid_x * TILE_SIZE, grid_y * TILE_SIZE),
+            (grid_x * TILE_SIZE + TILE_SIZE, grid_y * TILE_SIZE),
+            (grid_x * TILE_SIZE + TILE_SIZE, grid_y * TILE_SIZE + TILE_SIZE),
+            (grid_x * TILE_SIZE, grid_y * TILE_SIZE + TILE_SIZE),
+        ]
 
-            iso_poly = [self.cart_to_iso(x, y) for x, y in rect]
+        iso_poly = [self.cart_to_iso(x, y) for x, y in rect]
 
-            minx = min([x for x, y in iso_poly])
-            miny = min([y for x, y in iso_poly])
+        minx = min([x for x, y in iso_poly])
+        miny = min([y for x, y in iso_poly])
 
-            # Add seed to coordinates for unique but consistent generation
-            base_x = grid_x + self.seed * 0.1
-            base_y = grid_y + self.seed * 0.1
+        # Add seed to coordinates for unique but consistent generation
+        base_x = grid_x + self.seed * 0.1
+        base_y = grid_y + self.seed * 0.1
 
-            # Multiple octaves of Perlin noise
-            elevation = 0
-            amplitude = 1.1
-            frequency = 1.0
-            persistence = 0.5
-            octaves = 2
+        # Initialize Perlin noise generators
+        elevation_noise = noise.PerlinNoise(octaves=1, seed=int(self.seed))
+        moisture_noise = noise.PerlinNoise(octaves=2, seed=int(self.seed + 1))
 
-            for i in range(octaves):
-                elevation += amplitude * noise.pnoise2(
-                    base_x * frequency / self.perlin_scale,
-                    base_y * frequency / self.perlin_scale,
-                    octaves=1
-                )
-                amplitude *= persistence
-                frequency *= 2
+        # Calculate elevation using multiple octaves (2D noise)
+        elevation = 0
+        amplitude = 1.1
+        frequency = 1.0
+        persistence = 0.5
+        octaves = 2
 
-            # Moisture noise for vegetation
-            moisture = noise.pnoise2(
-                base_x/self.perlin_scale * 2,
-                base_y/self.perlin_scale * 2,
-                octaves=4
-            )
+        for i in range(octaves):
+            elevation += amplitude * elevation_noise([base_x / self.perlin_scale * frequency, base_y / self.perlin_scale * frequency])
+            amplitude *= persistence
+            frequency *= 2
 
-            # Normalize values
-            elevation = (elevation + 1) / 2
-            moisture = (moisture + 1) / 2
+        # Calculate moisture (2D noise)
+        moisture = moisture_noise([base_x / self.perlin_scale * 2, base_y / self.perlin_scale * 2])
 
-            # Use seeded random for consistent variation
-            random_variation = random.random()
+        # Normalize values
+        elevation = (elevation + 1) / 2
+        moisture = (moisture + 1) / 2
 
-            # Biome determination
-            if elevation <= 0.35:
-                tile = "water"
-            elif elevation <= 0.41:  # Mud around water
-                tile = "mud"
+        # Use seeded random for consistent variation
+        random_variation = random.random()
+
+        # Biome determination
+        if elevation <= 0.35:
+            tile = "water"
+        elif elevation <= 0.41:  # Mud around water
+            tile = "mud"
+        else:
+            if elevation > 0.8:
+                tile = "rock"
+            elif moisture > 0.6 and elevation < 0.7:
+                tile = "trees"
             else:
-                if elevation > 0.8:
-                    tile = "rock"
-                elif moisture > 0.6 and elevation < 0.7:
-                    tile = "trees"
-                else:
-                    if random_variation < 0.04:  # 5% chance
-                        if moisture > 0.4:
-                            tile = "trees"
-                        elif elevation > 0.58:
-                            tile = "rock"
-                        else:
-                            tile = ""
+                if random_variation < 0.04:  # 5% chance
+                    if moisture > 0.4:
+                        tile = "trees"
+                    elif elevation > 0.58:
+                        tile = "rock"
                     else:
                         tile = ""
+                else:
+                    tile = ""
 
-            out = {
-                "grid": [grid_x, grid_y],
-                "cart_rect": rect,
-                "iso_poly": iso_poly,
-                "render_pos": [minx, miny],
-                "tile": tile,
-                "elevation": elevation,
-                "moisture": moisture,
-                "buildable": True if tile in ["","trees"] else False,
-                "empty": True if tile in ["","mud","water"] else False,
-                "walkable": True if tile in [""] else False,
-                "user_built": False
-            }
+        out = {
+            "grid": [grid_x, grid_y],
+            "cart_rect": rect,
+            "iso_poly": iso_poly,
+            "render_pos": [minx, miny],
+            "tile": tile,
+            "elevation": elevation,
+            "moisture": moisture,
+            "buildable": True if tile in ["", "trees"] else False,
+            "empty": True if tile in ["", "mud", "water"] else False,
+            "walkable": True if tile in [""] else False,
+            "user_built": False
+        }
 
-            return out
+        return out
 
     def cart_to_iso(self,x,y):
         iso_x = x - y
