@@ -100,7 +100,7 @@ class Hud:
         for resource, resource_value in self.resource_manager.resources.items():
             txt = resource + ": " + str(resource_value)
             draw_text(screen, txt, 30, (255, 255, 255), (pos, 0))
-            pos += self.width * 0.1
+            pos += self.width * 0.08
 
     def load_images(self):
         residential_building = pg.image.load("assets/graphics/residential_building.png").convert_alpha()

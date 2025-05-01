@@ -68,5 +68,5 @@ class Game:
         self.screen.fill((0, 0, 0))
         self.world.draw(self.screen, self.camera)
         self.hud.draw(self.screen)
-        draw_text(self.screen,"fps={}".format(round(self.clock.get_fps())),25,(255,255,255),(15, 15))
+        draw_text(self.screen,"fps={}".format(round(self.clock.get_fps())),25,(0,255,0),(15, 15))
         pg.display.flip()
