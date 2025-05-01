@@ -105,8 +105,9 @@ class Hud:
     def load_images(self):
         residential_building = pg.image.load("assets/graphics/residential_building.png").convert_alpha()
         factory = pg.image.load("assets/graphics/factory.png").convert_alpha()
+        solar_panels = pg.image.load("assets/graphics/solar_panels.png").convert_alpha()
 
-        return {"residential_building": residential_building, "factory": factory}
+        return {"residential_building": residential_building, "factory": factory, "solar_panels": solar_panels}
 
 
     def scale_image(self, image, w=None, h=None):

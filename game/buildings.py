@@ -73,3 +73,39 @@ class Residential_Building:
                 self.resource_manager.resources["electricity"] -= self.electricity_consumption
                 self.resource_manager.resources["water"] -= self.water_consumption
                 self.consumption_cooldown = now
+
+class Solar_Panels:
+    def __init__(self, pos, resource_manager):
+        image = pg.image.load("assets/graphics/solar_panels.png")
+        self.image = image
+        self.name = "solar_panels"
+        self.rect = self.image.get_rect(topleft=pos)
+        self.resource_manager = resource_manager
+        self.resource_manager.apply_cost_to_resource(self.name)
+
+        # Cooldowns for resource generation and consumption
+        self.production_cooldown = pg.time.get_ticks()
+        self.consumption_cooldown = pg.time.get_ticks()
+
+        # Resource consumption rates per second
+        self.water_consumption = 1
+        self.thugoleon_consumption = 1
+
+    def update(self):
+        now = pg.time.get_ticks()
+
+        # Production of resources every 2 seconds
+        if now - self.production_cooldown >= 2000:
+            if (self.resource_manager.resources["water"] >= self.water_consumption
+                and self.resource_manager.resources["thugoleons"] >= self.thugoleon_consumption):
+                    self.resource_manager.resources["electricity"] += 5
+                    self.production_cooldown = now
+
+        # Consumption of resources every second
+        if now - self.consumption_cooldown >= 1000:
+            # Only consume if there are enough resources
+            if (self.resource_manager.resources["water"] >= self.water_consumption
+                and self.resource_manager.resources["thugoleons"] >= self.thugoleon_consumption):
+                self.resource_manager.resources["water"] -= self.water_consumption
+                self.resource_manager.resources["thugoleons"] -= self.thugoleon_consumption
+                self.consumption_cooldown = now
