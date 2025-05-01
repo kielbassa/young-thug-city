@@ -2,7 +2,7 @@ import pygame as pg
 import random
 import noise
 from .settings import TILE_SIZE
-from .buildings import Residential_Building, Factory, Solar_Panels
+from .buildings import Residential_Building, Factory, Solar_Panels, Water_Treatment_Plant
 
 class World:
     def __init__(self,resource_manager, entities, hud, clock, grid_length_x, grid_length_y, width, height, seed=None):
@@ -92,6 +92,8 @@ class World:
                         ent = Residential_Building(render_pos, self.resource_manager)
                     elif self.hud.selected_tile["name"] == "solar_panels":
                         ent = Solar_Panels(render_pos, self.resource_manager)
+                    elif self.hud.selected_tile["name"] == "water_treatment_plant":
+                        ent = Water_Treatment_Plant(render_pos, self.resource_manager)
 
                     self.entities.append(ent)
                     self.buildings[grid_pos[0]][grid_pos[1]] = ent
@@ -347,6 +349,7 @@ class World:
         residential_building = pg.image.load("assets/graphics/residential_building.png").convert_alpha()
         factory = pg.image.load("assets/graphics/factory.png").convert_alpha()
         solar_panels = pg.image.load("assets/graphics/solar_panels.png").convert_alpha()
+        water_treatment_plant = pg.image.load("assets/graphics/water_treatment_plant.png").convert_alpha()
 
         return {
             "block": block,
@@ -356,5 +359,6 @@ class World:
             "mud": mud,
             "residential_building": residential_building,
             "factory": factory,
-            "solar_panels": solar_panels
+            "solar_panels": solar_panels,
+            "water_treatment_plant": water_treatment_plant
         }

@@ -2,18 +2,19 @@ import pygame as pg
 
 class ResourceManager:
     def __init__(self):
-        # resources
+        # starting resources
         self.resources = {
             "electricity": 100,
-            "water": 50,
-            "thugoleons": 25
+            "water": 100,
+            "thugoleons": 1000
         }
 
         # costs
         self.costs = {
             "factory": {"thugoleons": 10},
             "residential_building": {"thugoleons": 5},
-            "solar_panels": {"thugoleons": 10}
+            "solar_panels": {"thugoleons": 10},
+            "water_treatment_plant": {"thugoleons": 10}
         }
 
     def apply_cost_to_resource(self, building):
