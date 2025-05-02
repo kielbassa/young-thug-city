@@ -15,9 +15,15 @@ class Hud:
         self.resources_rect = self.resources_surface.get_rect(topleft=(0,0))
         self.resources_surface.fill(self.hud_color)
 
+        # Variables to control building HUD size and position
+        self.building_hud_width = width * 0.25  # 25% of the screen width
+        self.building_hud_height = height * 0.12  # 12% of the screen height
+        self.building_hud_x = width * 0.73  # Positioned at 73% of the screen width
+        self.building_hud_y = height * 0.85  # Positioned at 85% of the screen height
+
         #building hud
-        self.build_surface = pg.Surface((width * 0.15, height* 0.15), pg.SRCALPHA)
-        self.build_rect = self.build_surface.get_rect(topleft=(self.width * 0.84, self.height*0.84))
+        self.build_surface = pg.Surface((self.building_hud_width, self.building_hud_height), pg.SRCALPHA)
+        self.build_rect = self.build_surface.get_rect(topleft=(self.building_hud_x-10, self.building_hud_y-10))
         self.build_surface.fill(self.hud_color)
 
         #select hud
@@ -53,9 +59,8 @@ class Hud:
                     self.selected_tile = tile
 
     def create_build_hud(self):
-        render_pos = [self.width*0.84 + 10, self.height*0.84+10]
-        object_width = self.build_surface.get_width() // 5
-
+        render_pos = [self.building_hud_x+20, self.building_hud_y+50] # Start position for rendering building icons
+        object_width = self.build_surface.get_width() // 6
         tiles = []
 
         for image_name, image in self.images.items():
@@ -82,8 +87,11 @@ class Hud:
     def draw(self, screen):
         # resource
         screen.blit(self.resources_surface, (0,0))
+
         # build hud
-        screen.blit(self.build_surface, (self.width * 0.84, self.height*0.84))
+        screen.blit(self.build_surface, (self.building_hud_x, self.building_hud_y))
+        draw_text(screen, "Build", 30, (255, 255, 255), (self.building_hud_x + 12, self.building_hud_y + 12))
+
         # select hud
         if self.examined_tile is not None:
             w, h = self.select_rect.width, self.select_rect.height
@@ -130,9 +138,9 @@ class Hud:
         factory = pg.image.load("assets/graphics/factory.png").convert_alpha()
         solar_panels = pg.image.load("assets/graphics/solar_panels.png").convert_alpha()
         water_treatment_plant = pg.image.load("assets/graphics/water_treatment_plant.png").convert_alpha()
+        road = pg.image.load("assets/graphics/road_tiles/road_1.png").convert_alpha()
 
-        return {"residential_building": residential_building, "factory": factory, "solar_panels": solar_panels, "water_treatment_plant": water_treatment_plant}
-
+        return {"residential_building": residential_building, "factory": factory, "solar_panels": solar_panels, "water_treatment_plant": water_treatment_plant, "road": road}
 
     def scale_image(self, image, w=None, h=None):
         if w is None and h is None:
@@ -148,3 +156,6 @@ class Hud:
         else:
             image = pg.transform.scale(image, (int(w), int(h)))
         return image
+
+
+

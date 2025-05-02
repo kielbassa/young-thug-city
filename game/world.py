@@ -3,6 +3,7 @@ import random
 import perlin_noise as noise
 from .settings import TILE_SIZE
 from .buildings import Residential_Building, Factory, Solar_Panels, Water_Treatment_Plant
+from .roads import Road
 
 class World:
     def __init__(self,resource_manager, entities, hud, clock, grid_length_x, grid_length_y, width, height, seed=None):
@@ -94,6 +95,8 @@ class World:
                         ent = Solar_Panels(render_pos, self.resource_manager)
                     elif self.hud.selected_tile["name"] == "water_treatment_plant":
                         ent = Water_Treatment_Plant(render_pos, self.resource_manager)
+                    elif self.hud.selected_tile["name"] == "road":
+                        ent = Road(render_pos)
 
                     self.entities.append(ent)
                     self.buildings[grid_pos[0]][grid_pos[1]] = ent
