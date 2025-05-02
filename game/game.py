@@ -56,6 +56,8 @@ class Game:
                 if event.key == pg.K_ESCAPE:
                     pg.quit()
                     sys.exit()
+                if event.key == pg.K_DELETE or event.key == pg.K_BACKSPACE:
+                    self.hud.delete_mode = not self.hud.delete_mode
 
     def update(self):
         self.camera.update()

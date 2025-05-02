@@ -40,7 +40,7 @@ class Camera:
 
         # Update scroll if not on hud element
         mouse_on_panel = False
-        for rect in [self.hud.build_rect, self.hud.select_rect]:
+        for rect in [self.hud.build_rect]:
             if rect.collidepoint(pg.mouse.get_pos()):
                 mouse_on_panel = True
                 break

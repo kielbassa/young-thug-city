@@ -57,7 +57,7 @@ class World:
             self.hud.examined_tile = None
 
         self.temp_tile = None
-        if self.hud.selected_tile is not None:
+        if self.hud.selected_tile is not None and not self.hud.delete_mode:
             # placing objects
             grid_pos = self.mouse_to_grid(mouse_pos[0], mouse_pos[1], camera.scroll)
 
@@ -103,6 +103,21 @@ class World:
                     self.world[grid_pos[0]][grid_pos[1]]["user_built"] = True
                     self.collision_matrix[grid_pos[1]][grid_pos[0]] = 0
                     self.click_sound.play()
+
+        elif self.hud.delete_mode and mouse_action[0]:  # Check if delete mode is active and left-click
+            self.temp_tile = None
+            grid_pos = self.mouse_to_grid(mouse_pos[0], mouse_pos[1], camera.scroll)
+            if self.can_place_tile(grid_pos):
+                building = self.buildings[grid_pos[0]][grid_pos[1]]
+                if building is not None:
+                    # Remove building
+                    self.entities.remove(building)
+                    self.buildings[grid_pos[0]][grid_pos[1]] = None
+                    self.world[grid_pos[0]][grid_pos[1]]["buildable"] = True
+                    self.world[grid_pos[0]][grid_pos[1]]["empty"] = True
+                    self.world[grid_pos[0]][grid_pos[1]]["walkable"] = True
+                    self.world[grid_pos[0]][grid_pos[1]]["user_built"] = False
+                    self.collision_matrix[grid_pos[1]][grid_pos[0]] = 1
 
         else:
             # navigation and selection

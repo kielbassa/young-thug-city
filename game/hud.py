@@ -31,6 +31,11 @@ class Hud:
         self.selected_tile = None
         self.examined_tile = None
 
+        self.delete_mode = False  # Track delete mode
+
+        # Create a transparent surface for the red frame
+        self.frame_surface = pg.Surface((width, height), pg.SRCALPHA)
+
     def update(self):
         mouse_pos = pg.mouse.get_pos()
         mouse_action = pg.mouse.get_pressed()
@@ -46,7 +51,6 @@ class Hud:
             if tile["rect"].collidepoint(mouse_pos) and tile["affordable"]:
                 if mouse_action[0]:
                     self.selected_tile = tile
-
 
     def create_build_hud(self):
         render_pos = [self.width*0.84 + 10, self.height*0.84+10]
@@ -101,6 +105,25 @@ class Hud:
             txt = resource + ": " + str(resource_value)
             draw_text(screen, txt, 30, (255, 255, 255), (pos, 0))
             pos += self.width * 0.08
+
+        # Display a message if delete mode is active
+        if self.delete_mode:
+            # Render a red frame with alpha
+            frame_thickness = 10  # Thickness of the red frame
+            frame_color = (255, 0, 0, 128)  # Red color with 50% transparency (alpha = 128)
+
+            # Clear the frame surface
+            self.frame_surface.fill((0, 0, 0, 0))  # Fully transparent background
+
+            # Draw the red frame on the transparent surface
+            pg.draw.rect(self.frame_surface, frame_color, (0, 0, self.width, frame_thickness))  # Top border
+            pg.draw.rect(self.frame_surface, frame_color, (0, 0, frame_thickness, self.height))  # Left border
+            pg.draw.rect(self.frame_surface, frame_color, (0, self.height - frame_thickness, self.width, frame_thickness))  # Bottom border
+            pg.draw.rect(self.frame_surface, frame_color, (self.width - frame_thickness, 0, frame_thickness, self.height))  # Right border
+
+            # Blit the frame surface onto the screen
+            screen.blit(self.frame_surface, (0, 0))
+            draw_text(screen, "Delete mode active, press the key again to deactivate", 60, (255, 0, 0), (self.width * 0.02, self.height * 0.95))
 
     def load_images(self):
         residential_building = pg.image.load("assets/graphics/residential_building.png").convert_alpha()
