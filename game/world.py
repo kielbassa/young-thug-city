@@ -99,11 +99,13 @@ class World:
                         "iso_poly": iso_poly,
                         "buildable": buildable and self.resource_manager.is_affordable(self.hud.selected_tile["name"]),  # Check if affordable
                         "empty": empty,
-                        "user_built": user_built
+                        "user_built": user_built,
+                        "road_access": self.adjecent_roads(grid_pos)  # Check if there are adjacent roads
                     }
 
                 if (mouse_action[0] and
                     buildable and
+                    self.adjecent_roads(grid_pos) and  # Check if there are adjacent roads
                     self.buildings[grid_pos[0]][grid_pos[1]] is None and
                     self.roads[grid_pos[0]][grid_pos[1]] is None and
                     self.resource_manager.is_affordable(self.hud.selected_tile["name"])):  # Check if affordable
@@ -144,14 +146,22 @@ class World:
                 building = self.buildings[grid_pos[0]][grid_pos[1]]
                 if building is not None:
                     # Remove building
+                    self.click_sound.play()
                     self.entities.remove(building)
                     self.buildings[grid_pos[0]][grid_pos[1]] = None
-                    self.world[grid_pos[0]][grid_pos[1]]["buildable"] = True
-                    self.world[grid_pos[0]][grid_pos[1]]["empty"] = True
-                    self.world[grid_pos[0]][grid_pos[1]]["walkable"] = True
-                    self.world[grid_pos[0]][grid_pos[1]]["user_built"] = False
-                    self.collision_matrix[grid_pos[1]][grid_pos[0]] = 1
-
+                road = self.roads[grid_pos[0]][grid_pos[1]]
+                if road is not None:
+                    # Remove road
+                    self.click_sound.play()
+                    self.roads[grid_pos[0]][grid_pos[1]] = None
+                self.world[grid_pos[0]][grid_pos[1]]["buildable"] = True
+                self.world[grid_pos[0]][grid_pos[1]]["empty"] = True
+                self.world[grid_pos[0]][grid_pos[1]]["walkable"] = True
+                self.world[grid_pos[0]][grid_pos[1]]["user_built"] = False
+                self.collision_matrix[grid_pos[1]][grid_pos[0]] = 1
+                
+                # Update road textures after deletion
+                self.update_road_textures(grid_pos)
         else:
             # navigation and selection
             grid_pos = self.mouse_to_grid(mouse_pos[0], mouse_pos[1], camera.scroll)
@@ -209,6 +219,19 @@ class World:
                     screen.blit(citizen.image,
                                 (citizen.current_pos.x + self.grass_tiles.get_width()/2 + camera.scroll.x,
                                  citizen.current_pos.y - (citizen.image.get_height() - 1.5*TILE_SIZE) + camera.scroll.y))
+                    
+                # Draw red polygon around the tile in delete mode
+                if self.hud.delete_mode:
+                    grid_pos = self.mouse_to_grid(pg.mouse.get_pos()[0], pg.mouse.get_pos()[1], camera.scroll)
+                    if grid_pos == (x, y):
+                        iso_poly = self.world[x][y]["iso_poly"]
+                        iso_poly = [(px + self.grass_tiles.get_width() / 2 + camera.scroll.x,
+                                    py + camera.scroll.y + 0.5*TILE_SIZE) for px, py in iso_poly]
+
+                        # Create a transparent surface for the polygon
+                        polygon_surface = pg.Surface(screen.get_size(), pg.SRCALPHA)
+                        pg.draw.polygon(polygon_surface, (255, 0, 0, 128), iso_poly)  # Red with 50% transparency
+                        screen.blit(polygon_surface, (0, 0))
 
 
         if self.temp_tile is not None:
@@ -226,7 +249,7 @@ class World:
                             render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
                             render_pos[1] - (self.temp_tile["image"].get_height() - 2 * TILE_SIZE) + camera.scroll.y)
                         )
-        if self.temp_tile is not None:
+            
             # Get mouse position
             mouse_pos = pg.mouse.get_pos()
 
@@ -340,6 +363,32 @@ class World:
         }
 
         return out
+    
+    def adjecent_roads(self, grid_pos):
+        if self.hud.selected_tile["name"] == "road":
+            return True
+        else:
+        # Check if the tile has a road adjacent to it
+            x, y = grid_pos
+
+            # Ensure the grid position is within bounds
+            if not (0 <= x < self.grid_length_x and 0 <= y < self.grid_length_y):
+                return False
+
+            # Check for adjacent roads
+            adjacent_positions = [
+                (x - 1, y),  # Left
+                (x + 1, y),  # Right
+                (x, y - 1),  # Top
+                (x, y + 1)   # Bottom
+            ]
+
+            for nx, ny in adjacent_positions:
+                if 0 <= nx < self.grid_length_x and 0 <= ny < self.grid_length_y:
+                    if self.roads[nx][ny] is not None:
+                        return True
+
+            return False
 
     def cart_to_iso(self,x,y):
         iso_x = x - y
