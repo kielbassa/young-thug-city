@@ -35,13 +35,34 @@ class World:
 
         self.buildings = [[None for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
         self.citizens = [[None for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
-
+        self.roads = [[None for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
 
         self.temp_tile = None
         self.examine_tile = None
 
         # load click sound
         self.click_sound = pg.mixer.Sound('assets/audio/click.wav')
+
+    def update_road_textures(self, grid_pos):
+        # Update the texture of the road at the given position and its neighbors
+        neighbors = [
+            (grid_pos[0], grid_pos[1] - 1),  # Top
+            (grid_pos[0] + 1, grid_pos[1]),  # Right
+            (grid_pos[0], grid_pos[1] + 1),  # Bottom
+            (grid_pos[0] - 1, grid_pos[1]),  # Left
+        ]
+
+        # Update the current road
+        road = self.roads[grid_pos[0]][grid_pos[1]]
+        if road:
+            road.update_texture(grid_pos, self.roads)
+
+        # Update neighboring roads
+        for nx, ny in neighbors:
+            if 0 <= nx < self.grid_length_x and 0 <= ny < self.grid_length_y:
+                neighbor_road = self.roads[nx][ny]
+                if neighbor_road:
+                    neighbor_road.update_texture((nx, ny), self.roads)
 
     def update(self, clock, camera):
         # Update animation timer and frame
@@ -84,29 +105,38 @@ class World:
                 if (mouse_action[0] and
                     buildable and
                     self.buildings[grid_pos[0]][grid_pos[1]] is None and
+                    self.roads[grid_pos[0]][grid_pos[1]] is None and
                     self.resource_manager.is_affordable(self.hud.selected_tile["name"])):  # Check if affordable
 
                     ent = None
-                    if self.hud.selected_tile["name"] == "factory":
-                        ent = Factory(render_pos, self.resource_manager)
-                    elif self.hud.selected_tile["name"] == "residential_building":
-                        ent = Residential_Building(render_pos, self.resource_manager)
-                    elif self.hud.selected_tile["name"] == "solar_panels":
-                        ent = Solar_Panels(render_pos, self.resource_manager)
-                    elif self.hud.selected_tile["name"] == "water_treatment_plant":
-                        ent = Water_Treatment_Plant(render_pos, self.resource_manager)
-                    elif self.hud.selected_tile["name"] == "road":
-                        ent = Road(render_pos)
+                    match self.hud.selected_tile["name"]:
+                        case "road":
+                            ent = Road(render_pos)
+                            road = Road(self.world[grid_pos[0]][grid_pos[1]]["render_pos"])
+                            self.roads[grid_pos[0]][grid_pos[1]] = road
+                            self.update_road_textures(grid_pos)
+                        case "factory":
+                            ent = Factory(render_pos, self.resource_manager)
+                            self.buildings[grid_pos[0]][grid_pos[1]] = ent
+                        case "residential_building":
+                            ent = Residential_Building(render_pos, self.resource_manager)
+                            self.buildings[grid_pos[0]][grid_pos[1]] = ent
+                        case "solar_panels":
+                            ent = Solar_Panels(render_pos, self.resource_manager)
+                            self.buildings[grid_pos[0]][grid_pos[1]] = ent
+                        case "water_treatment_plant":
+                            ent = Water_Treatment_Plant(render_pos, self.resource_manager)
+                            self.buildings[grid_pos[0]][grid_pos[1]] = ent
 
                     self.entities.append(ent)
-                    self.buildings[grid_pos[0]][grid_pos[1]] = ent
                     self.world[grid_pos[0]][grid_pos[1]]["buildable"] = False
                     self.world[grid_pos[0]][grid_pos[1]]["empty"] = False
                     self.world[grid_pos[0]][grid_pos[1]]["walkable"] = False
                     self.world[grid_pos[0]][grid_pos[1]]["user_built"] = True
                     self.collision_matrix[grid_pos[1]][grid_pos[0]] = 0
                     self.click_sound.play()
-
+                        
+                    
         elif self.hud.delete_mode and mouse_action[0]:  # Check if delete mode is active and left-click
             self.temp_tile = None
             grid_pos = self.mouse_to_grid(mouse_pos[0], mouse_pos[1], camera.scroll)
@@ -131,8 +161,6 @@ class World:
                     self.examine_tile = grid_pos
                     self.hud.examined_tile = building
 
-
-
     def draw(self, screen, camera):
         screen.blit(self.grass_tiles, (camera.scroll.x, camera.scroll.y))
 
@@ -154,7 +182,13 @@ class World:
                         screen.blit(self.tiles[tile],
                                     (render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
                                     render_pos[1] - (self.tiles[tile].get_height() - 2 * TILE_SIZE) + camera.scroll.y))
-
+                        
+                # draw roads
+                road = self.roads[x][y]
+                if road is not None:
+                    screen.blit(road.image,
+                                (render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
+                                render_pos[1] - (road.image.get_height() - 2 * TILE_SIZE) + camera.scroll.y))
                 # draw buildings
                 building = self.buildings[x][y]
                 if building is not None:
