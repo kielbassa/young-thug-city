@@ -106,6 +106,11 @@ class World:
                     if tile_type == "mud":
                         buildable = True
 
+                # Special case for roads - can be built on mud
+                elif self.hud.selected_tile["name"] == "road":
+                    if tile_type == "mud":
+                        buildable = True
+
                 self.temp_tile = {
                         "image": img,
                         "render_pos": render_pos,
@@ -124,6 +129,14 @@ class World:
                         self.adjecent_roads(grid_pos) and
                         self.buildings[grid_pos[0]][grid_pos[1]] is None and
                         self.roads[grid_pos[0]][grid_pos[1]] is None and
+                        self.resource_manager.is_affordable(self.hud.selected_tile["name"])
+                    )
+                # Special placement conditions for roads on mud
+                elif self.hud.selected_tile["name"] == "road" and tile_type == "mud":
+                    can_place = (
+                        mouse_action[0] and
+                        self.roads[grid_pos[0]][grid_pos[1]] is None and
+                        self.buildings[grid_pos[0]][grid_pos[1]] is None and
                         self.resource_manager.is_affordable(self.hud.selected_tile["name"])
                     )
                 else:
@@ -146,6 +159,8 @@ class World:
                             road = Road(self.world[grid_pos[0]][grid_pos[1]]["render_pos"])
                             self.roads[grid_pos[0]][grid_pos[1]] = road
                             self.update_road_textures(grid_pos)
+                            # Make tiles with roads walkable
+                            self.world[grid_pos[0]][grid_pos[1]]["walkable"] = True
                         case "factory":
                             ent = Factory(render_pos, self.resource_manager)
                             self.buildings[grid_pos[0]][grid_pos[1]] = ent
@@ -162,9 +177,17 @@ class World:
                     self.entities.append(ent)
                     self.world[grid_pos[0]][grid_pos[1]]["buildable"] = False
                     self.world[grid_pos[0]][grid_pos[1]]["empty"] = False
-                    self.world[grid_pos[0]][grid_pos[1]]["walkable"] = False
+
+                    # Only mark non-road tiles as non-walkable
+                    if self.hud.selected_tile["name"] != "road":
+                        self.world[grid_pos[0]][grid_pos[1]]["walkable"] = False
+
                     self.world[grid_pos[0]][grid_pos[1]]["user_built"] = True
-                    self.collision_matrix[grid_pos[1]][grid_pos[0]] = 0
+
+                    # Only update collision matrix for non-road buildings
+                    if self.hud.selected_tile["name"] != "road":
+                        self.collision_matrix[grid_pos[1]][grid_pos[0]] = 0
+
                     self.click_sound.play()
 
 
