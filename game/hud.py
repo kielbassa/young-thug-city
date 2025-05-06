@@ -1,6 +1,7 @@
 import pygame as pg
 from .utils import draw_text
 from .buildings import Buildings
+from .settings import ELECTRICITY_MULTIPLIER, MOISTURE_MULTIPLIER, WATER_PUMP_COST_MULTIPLIER, SOLAR_PANEL_CLEANING_COST_MULTIPLIER
 
 class Hud:
 
@@ -197,8 +198,8 @@ class Hud:
         pos = self.width - 600
         for resource, resource_value in self.resource_manager.resources.items():
             txt = resource + ": " + str(resource_value)
-            draw_text(screen, txt, 30, (255, 255, 255), (pos, 0))
-            pos += self.width * 0.08
+            draw_text(screen, txt, 30, (255, 255, 255), (pos, 5))
+            pos += len(txt) * 13
 
         # Draw building information tooltip if temp_tile exists
         if hasattr(self, 'world') and self.world.temp_tile is not None:
@@ -351,13 +352,13 @@ class Hud:
 
             elif building_name == "solar_panels":
                 # Calculate potential electricity production based on elevation
-                potential_rate = round(self.world.world[grid_pos[0]][grid_pos[1]]["elevation"] *
-                                      self.world.resource_manager.ELECTRICITY_MULTIPLIER)
-                water_consumption = self.building.consumption["solar_panels"]["water"]
+                potential_rate = round(self.world.world[grid_pos[0]][grid_pos[1]]["elevation"] * ELECTRICITY_MULTIPLIER)
+                
+                potential_water_consumption = round(self.building.consumption["solar_panels"]["water"] + potential_rate * SOLAR_PANEL_CLEANING_COST_MULTIPLIER)
                 thugoleon_consumption = self.building.consumption["solar_panels"]["thugoleons"]
 
                 prod_text = f"Production: +{potential_rate} electricity/s"
-                cons_text1 = f"Consumes: +{water_consumption} water/s"
+                cons_text1 = f"Consumes: +{potential_water_consumption} water/s"
                 cons_text2 = f"Consumes: +{thugoleon_consumption} thugoleon/s"
 
                 prod_surface = font.render(prod_text, True, (100, 255, 100))
@@ -373,13 +374,12 @@ class Hud:
 
             elif building_name == "water_treatment_plant":
                 # Calculate potential water production based on moisture
-                potential_rate = round(self.world.world[grid_pos[0]][grid_pos[1]]["moisture"] *
-                                      self.world.resource_manager.MOISTURE_MULTIPLIER)
-                electricity_consumption = self.building.consumption["water_treatment_plant"]["electricity"]
+                potential_rate = round(self.world.world[grid_pos[0]][grid_pos[1]]["moisture"] * MOISTURE_MULTIPLIER)
+                potential_electricity_consumption = round(self.building.consumption["water_treatment_plant"]["electricity"] + potential_rate * WATER_PUMP_COST_MULTIPLIER)
                 thugoleon_consumption = self.building.consumption["water_treatment_plant"]["thugoleons"]
 
                 prod_text = f"Production: +{potential_rate} water/s"
-                cons_text1 = f"Consumes: +{electricity_consumption} electricity/s"
+                cons_text1 = f"Consumes: +{potential_electricity_consumption} electricity/s"
                 cons_text2 = f"Consumes: +{thugoleon_consumption} thugoleon/s"
 
                 prod_surface = font.render(prod_text, True, (100, 255, 100))

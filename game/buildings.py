@@ -34,7 +34,8 @@ class Buildings:
             },
             "residential_building": {
                 "thugoleons": 2,
-            }
+            },
+
         }
 
 class Factory:

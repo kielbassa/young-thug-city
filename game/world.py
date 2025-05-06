@@ -169,11 +169,17 @@ class World:
                             self.buildings[grid_pos[0]][grid_pos[1]] = ent
                         case "solar_panels":
                             ent = Solar_Panels(render_pos, self.resource_manager)
-                            ent.electricity_production_rate = round(self.world[grid_pos[0]][grid_pos[1]]["elevation"]*ELECTRICITY_MULTIPLIER)
+                            electricity_production_rate = round(self.world[grid_pos[0]][grid_pos[1]]["elevation"]*ELECTRICITY_MULTIPLIER)
+                            water_consumption_rate = round(ent.water_consumption + electricity_production_rate*0.15)
+                            ent.electricity_production_rate = electricity_production_rate
+                            ent.water_consumption = water_consumption_rate
                             self.buildings[grid_pos[0]][grid_pos[1]] = ent
                         case "water_treatment_plant":
                             ent = Water_Treatment_Plant(render_pos, self.resource_manager)
-                            ent.water_production_rate = round(self.world[grid_pos[0]][grid_pos[1]]["moisture"]*MOISTURE_MULTIPLIER)
+                            water_production_rate = round(self.world[grid_pos[0]][grid_pos[1]]["moisture"]*MOISTURE_MULTIPLIER)
+                            electricity_consumption_rate = round(ent.electricity_consumption + water_production_rate*0.3)
+                            ent.water_production_rate = water_production_rate
+                            ent.electricity_consumption = electricity_consumption_rate
                             self.buildings[grid_pos[0]][grid_pos[1]] = ent
 
                     self.entities.append(ent)
