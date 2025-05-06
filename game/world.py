@@ -67,6 +67,7 @@ class World:
                     neighbor_road.update_texture((nx, ny), self.roads)
 
     def update(self, clock, camera):
+        self.camera = camera
         # Update animation timer and frame
         self.animation_timer += clock.get_time() / 1000.0  # Convert to seconds
         if self.animation_timer >= self.animation_speed:

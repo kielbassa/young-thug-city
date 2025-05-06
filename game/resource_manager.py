@@ -1,7 +1,11 @@
 import pygame as pg
+from .settings import *
 
 class ResourceManager:
     def __init__(self):
+        self.ELECTRICITY_MULTIPLIER = ELECTRICITY_MULTIPLIER
+        self.MOISTURE_MULTIPLIER = MOISTURE_MULTIPLIER
+
         # starting resources
         self.resources = {
             "electricity": 100,
