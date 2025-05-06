@@ -105,7 +105,7 @@ class Hud:
             screen.blit(self.select_surface, (self.width * 0.35, self.height * 0.74))
             img = self.examined_tile.image.copy()
             img_scale = self.scale_image(img, h=h * 0.7)
-            screen.blit(img_scale, (self.width * 0.35 + 50, self.height * 0.79 + 45))
+            screen.blit(img_scale, (self.width * 0.35 + 85, self.height * 0.79 + 45))
 
             # Add building name
             draw_text(screen, self.examined_tile.name.replace('_', ' ').title(), 40, (255, 255, 255),
@@ -195,7 +195,7 @@ class Hud:
             screen.blit(icon, tile["rect"].topleft)
 
         # resources
-        pos = self.width - 600
+        pos = self.width - 750
         for resource, resource_value in self.resource_manager.resources.items():
             txt = resource + ": " + str(resource_value)
             draw_text(screen, txt, 30, (255, 255, 255), (pos, 5))
