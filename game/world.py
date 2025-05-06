@@ -35,7 +35,7 @@ class World:
         self.collision_matrix = self.create_collision_matrix()
 
         self.buildings = [[None for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
-        # self.citizens = [[None for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
+        self.citizens = [[None for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
         self.roads = [[None for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
 
         self.temp_tile = None
@@ -159,8 +159,6 @@ class World:
                             road = Road(self.world[grid_pos[0]][grid_pos[1]]["render_pos"])
                             self.roads[grid_pos[0]][grid_pos[1]] = road
                             self.update_road_textures(grid_pos)
-                            # Make tiles with roads walkable
-                            self.world[grid_pos[0]][grid_pos[1]]["walkable"] = True
                         case "factory":
                             ent = Factory(render_pos, self.resource_manager)
                             self.buildings[grid_pos[0]][grid_pos[1]] = ent
@@ -203,7 +201,7 @@ class World:
                     self.roads[grid_pos[0]][grid_pos[1]] = None
                 self.world[grid_pos[0]][grid_pos[1]]["buildable"] = True
                 self.world[grid_pos[0]][grid_pos[1]]["empty"] = True
-                self.world[grid_pos[0]][grid_pos[1]]["walkable"] = False
+                self.world[grid_pos[0]][grid_pos[1]]["walkable"] = True
                 self.world[grid_pos[0]][grid_pos[1]]["user_built"] = False
                 self.collision_matrix[grid_pos[1]][grid_pos[0]] = 1
 
@@ -427,7 +425,7 @@ class World:
             "moisture": moisture,
             "buildable": True if tile in ["", "trees"] else False,
             "empty": True if tile in ["", "mud", "water"] else False,
-            "walkable": False,
+            "walkable": True if tile in ["", "mud"] else False,
             "user_built": False
         }
 
