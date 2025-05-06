@@ -11,6 +11,7 @@ class World:
         self.building_attributes = buildings
         self.entities = entities
         self.hud = hud
+        self.hud.world = self
         self.clock = clock
         self.grid_length_x = grid_length_x
         self.grid_length_y = grid_length_y
@@ -277,6 +278,7 @@ class World:
                             pg.draw.polygon(polygon_surface, (255, 0, 0, 128), iso_poly)  # Red with 50% transparency
                             screen.blit(polygon_surface, (0, 0))
 
+            # Draw the temporary tile's polygon
             if self.temp_tile is not None:
                 iso_poly = self.temp_tile["iso_poly"]
                 iso_poly = [(x + self.grass_tiles.get_width()/2 + camera.scroll.x, y - (self.temp_tile["image"].get_height() - 2.5*TILE_SIZE) + camera.scroll.y) for x, y in iso_poly]
@@ -292,52 +294,6 @@ class World:
                                 render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
                                 render_pos[1] - (self.temp_tile["image"].get_height() - 2 * TILE_SIZE) + camera.scroll.y)
                             )
-
-                # Get mouse position
-                mouse_pos = pg.mouse.get_pos()
-
-                # Get the building cost
-                building_name = self.hud.selected_tile["name"]
-                cost_info = self.resource_manager.costs[building_name]
-
-                # Access building description from the buildings instance
-                building_name = self.hud.selected_tile["name"]
-                if building_name == "road":
-                    road_attributes = Road(None)
-                    description_text = f"Description: {road_attributes.description}"
-                else:
-                    # For other buildings, get the description from the Buildings class
-                    if hasattr(self.building_attributes, 'description') and building_name in self.building_attributes.description:
-                        description_text = f"Description: {self.building_attributes.description[building_name]}"
-                    else:
-                        description_text = ""
-                # Create cost text
-                cost_text = f"Cost: {cost_info['thugoleons']} thugoleons"
-
-                # Render text
-                font = pg.font.SysFont(None, 24)
-                cost_surface = font.render(cost_text, True, (255, 255, 255))
-                cost_rect = cost_surface.get_rect()
-                cost_rect.topleft = (mouse_pos[0] + 20, mouse_pos[1] + 20)
-
-                # Create background rect
-                bg_rect = cost_rect.copy()
-                bg_rect.inflate_ip(10, 10)  # Make background slightly larger than text
-
-                # Draw cost info
-                pg.draw.rect(screen, (0, 0, 0, 180), bg_rect)
-                screen.blit(cost_surface, cost_rect)
-
-                # Draw description if available
-                if description_text:
-                    description_surface = font.render(description_text, True, (255, 255, 255))
-                    description_rect = description_surface.get_rect()
-                    description_rect.topleft = (mouse_pos[0] + 20, mouse_pos[1] + 50)
-
-                    bg_rect = description_rect.copy()
-                    bg_rect.inflate_ip(10, 10)  # Make background slightly larger than text
-                    pg.draw.rect(screen, (0, 0, 0, 180), bg_rect)
-                    screen.blit(description_surface, description_rect)
 
     def create_world(self):
         world = []

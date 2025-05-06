@@ -114,6 +114,10 @@ class Hud:
             draw_text(screen, txt, 30, (255, 255, 255), (pos, 0))
             pos += self.width * 0.08
 
+        # Draw building information tooltip if temp_tile exists
+        if hasattr(self, 'world') and self.world.temp_tile is not None:
+            self.draw_building_info(screen)
+
         # Display a message if delete mode is active
         if self.delete_mode:
             # Render a red frame with alpha
@@ -157,5 +161,51 @@ class Hud:
             image = pg.transform.scale(image, (int(w), int(h)))
         return image
 
+    def draw_building_info(self, screen):
+        # Get mouse position
+        mouse_pos = pg.mouse.get_pos()
 
+        # Get the building cost
+        building_name = self.selected_tile["name"]
+        cost_info = self.resource_manager.costs[building_name]
 
+        # Access building description
+        if building_name == "road":
+            from .roads import Road
+            road_attributes = Road(None)
+            description_text = f"Description: {road_attributes.description}"
+        else:
+            # For other buildings, get the description from the Buildings class
+            buildings_attributes = self.world.building_attributes
+            if hasattr(buildings_attributes, 'description') and building_name in buildings_attributes.description:
+                description_text = f"Description: {buildings_attributes.description[building_name]}"
+            else:
+                description_text = ""
+
+        # Create cost text
+        cost_text = f"Cost: {cost_info['thugoleons']} thugoleons"
+
+        # Render text
+        font = pg.font.SysFont(None, 24)
+        cost_surface = font.render(cost_text, True, (255, 255, 255))
+        cost_rect = cost_surface.get_rect()
+        cost_rect.topleft = (mouse_pos[0] + 20, mouse_pos[1] + 20)
+
+        # Create background rect
+        bg_rect = cost_rect.copy()
+        bg_rect.inflate_ip(10, 10)  # Make background slightly larger than text
+
+        # Draw cost info
+        pg.draw.rect(screen, (0, 0, 0, 180), bg_rect)
+        screen.blit(cost_surface, cost_rect)
+
+        # Draw description if available
+        if description_text:
+            description_surface = font.render(description_text, True, (255, 255, 255))
+            description_rect = description_surface.get_rect()
+            description_rect.topleft = (mouse_pos[0] + 20, mouse_pos[1] + 50)
+
+            bg_rect = description_rect.copy()
+            bg_rect.inflate_ip(10, 10)
+            pg.draw.rect(screen, (0, 0, 0, 180), bg_rect)
+            screen.blit(description_surface, description_rect)
