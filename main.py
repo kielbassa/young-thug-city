@@ -11,7 +11,7 @@ def main():
     pg.mixer.init()
 
     pg.display.set_caption("Young Thug City")
-    screen = pg.display.set_mode((0, 0), pg.FULLSCREEN)
+    screen = pg.display.set_mode((1920, 1080))
     clock = pg.time.Clock()
 
     # menus

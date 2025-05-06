@@ -35,7 +35,7 @@ class World:
         self.collision_matrix = self.create_collision_matrix()
 
         self.buildings = [[None for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
-        self.citizens = [[None for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
+        # self.citizens = [[None for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
         self.roads = [[None for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
 
         self.temp_tile = None
@@ -177,19 +177,14 @@ class World:
                     self.entities.append(ent)
                     self.world[grid_pos[0]][grid_pos[1]]["buildable"] = False
                     self.world[grid_pos[0]][grid_pos[1]]["empty"] = False
-
-                    # Only mark non-road tiles as non-walkable
-                    if self.hud.selected_tile["name"] != "road":
-                        self.world[grid_pos[0]][grid_pos[1]]["walkable"] = False
-
-                    self.world[grid_pos[0]][grid_pos[1]]["user_built"] = True
-
-                    # Only update collision matrix for non-road buildings
-                    if self.hud.selected_tile["name"] != "road":
+                    if self.hud.selected_tile["name"] == "road":
+                        # Only mark road tiles as walkable
+                        self.world[grid_pos[0]][grid_pos[1]]["walkable"] = True
+                    else:
+                        # Only update collision matrix for non-road buildings
                         self.collision_matrix[grid_pos[1]][grid_pos[0]] = 0
-
+                    self.world[grid_pos[0]][grid_pos[1]]["user_built"] = True
                     self.click_sound.play()
-
 
         elif self.hud.delete_mode and mouse_action[0]:  # Check if delete mode is active and left-click
             self.temp_tile = None
@@ -208,7 +203,7 @@ class World:
                     self.roads[grid_pos[0]][grid_pos[1]] = None
                 self.world[grid_pos[0]][grid_pos[1]]["buildable"] = True
                 self.world[grid_pos[0]][grid_pos[1]]["empty"] = True
-                self.world[grid_pos[0]][grid_pos[1]]["walkable"] = True
+                self.world[grid_pos[0]][grid_pos[1]]["walkable"] = False
                 self.world[grid_pos[0]][grid_pos[1]]["user_built"] = False
                 self.collision_matrix[grid_pos[1]][grid_pos[0]] = 1
 
@@ -225,7 +220,6 @@ class World:
 
     def draw(self, screen, camera):
             screen.blit(self.grass_tiles, (camera.scroll.x, camera.scroll.y))
-
             for x in range(self.grid_length_x):
                 for y in range(self.grid_length_y):
                     render_pos = self.world[x][y]["render_pos"]
@@ -266,11 +260,11 @@ class World:
                                 pg.draw.polygon(screen, (255, 255, 255), mask, 3)
 
                     # draw citizens
-                    citizen = self.citizens[x][y]
-                    if citizen is not None:
-                        screen.blit(citizen.image,
-                                    (citizen.current_pos.x + self.grass_tiles.get_width()/2 + camera.scroll.x,
-                                     citizen.current_pos.y - (citizen.image.get_height() - 1.5*TILE_SIZE) + camera.scroll.y))
+                    # citizen = self.citizens[x][y]
+                    # if citizen is not None:
+                    #     screen.blit(citizen.image,
+                    #                 (citizen.current_pos.x + self.grass_tiles.get_width()/2 + camera.scroll.x,
+                    #                  citizen.current_pos.y - (citizen.image.get_height() - 1.5*TILE_SIZE) + camera.scroll.y))
 
                     # Draw red polygon around the tile in delete mode
                     if self.hud.delete_mode:
@@ -284,7 +278,6 @@ class World:
                             polygon_surface = pg.Surface(screen.get_size(), pg.SRCALPHA)
                             pg.draw.polygon(polygon_surface, (255, 0, 0, 128), iso_poly)  # Red with 50% transparency
                             screen.blit(polygon_surface, (0, 0))
-
 
             if self.temp_tile is not None:
                 iso_poly = self.temp_tile["iso_poly"]
@@ -434,7 +427,7 @@ class World:
             "moisture": moisture,
             "buildable": True if tile in ["", "trees"] else False,
             "empty": True if tile in ["", "mud", "water"] else False,
-            "walkable": True if tile in [""] else False,
+            "walkable": False,
             "user_built": False
         }
 
@@ -446,11 +439,9 @@ class World:
         else:
         # Check if the tile has a road adjacent to it
             x, y = grid_pos
-
             # Ensure the grid position is within bounds
             if not (0 <= x < self.grid_length_x and 0 <= y < self.grid_length_y):
                 return False
-
             # Check for adjacent roads
             adjacent_positions = [
                 (x - 1, y),  # Left
@@ -458,12 +449,10 @@ class World:
                 (x, y - 1),  # Top
                 (x, y + 1)   # Bottom
             ]
-
             for nx, ny in adjacent_positions:
                 if 0 <= nx < self.grid_length_x and 0 <= ny < self.grid_length_y:
                     if self.roads[nx][ny] is not None:
                         return True
-
             return False
 
     def cart_to_iso(self,x,y):
@@ -492,8 +481,6 @@ class World:
                     collision_matrix[y][x] = 0
 
         return collision_matrix
-
-
 
     def can_place_tile(self, grid_pos):
         mouse_on_panel = False
