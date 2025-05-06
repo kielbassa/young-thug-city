@@ -4,7 +4,6 @@ from .buildings import Buildings
 from .settings import ELECTRICITY_MULTIPLIER, MOISTURE_MULTIPLIER, WATER_PUMP_COST_MULTIPLIER, SOLAR_PANEL_CLEANING_COST_MULTIPLIER
 
 class Hud:
-
     def __init__(self,resource_manager,width,height):
         self.resource_manager = resource_manager
         self.width = width
@@ -49,7 +48,6 @@ class Hud:
 
         # Create a transparent surface for the red frame
         self.frame_surface = pg.Surface((width, height), pg.SRCALPHA)
-
 
     def update(self):
         mouse_pos = pg.mouse.get_pos()
@@ -99,101 +97,16 @@ class Hud:
         screen.blit(self.build_surface, (self.building_hud_x, self.building_hud_y))
         draw_text(screen, "Build", 30, (255, 255, 255), (self.building_hud_x + 12, self.building_hud_y + 12))
 
-        # select hud
-        if self.examined_tile is not None:
-            w, h = self.select_rect.width, self.select_rect.height
-            screen.blit(self.select_surface, (self.width * 0.35, self.height * 0.74))
-            img = self.examined_tile.image.copy()
-            img_scale = self.scale_image(img, h=h * 0.7)
-            screen.blit(img_scale, (self.width * 0.35 + 85, self.height * 0.79 + 45))
-
-            # Add building name
-            draw_text(screen, self.examined_tile.name.replace('_', ' ').title(), 40, (255, 255, 255),
-                      (self.width * 0.35 + 10, self.height * 0.74 + 10))
-
-            # Display resource production/consumption information
-            text_size = 28
-            description_text_size = 25
-            resource_y = self.height * 0.79 + 50
-            resource_x = self.width * 0.5 + 100
-
-            # Consumption section header
-            draw_text(screen, "Consumption:", text_size, (255, 180, 180), (resource_x, resource_y))
-            resource_y += text_size
-
-            # Check if the building has consumption attributes
-            if hasattr(self.examined_tile, 'electricity_consumption'):
-                consumption_text = f"Electricity: -{self.examined_tile.electricity_consumption}/s"
-                draw_text(screen, consumption_text, text_size, (255, 100, 100), (resource_x, resource_y))
-                resource_y += text_size
-
-            if hasattr(self.examined_tile, 'water_consumption'):
-                consumption_text = f"Water: -{self.examined_tile.water_consumption}/s"
-                draw_text(screen, consumption_text, text_size, (255, 100, 100), (resource_x, resource_y))
-                resource_y += text_size
-
-            if hasattr(self.examined_tile, 'thugoleon_consumption'):
-                consumption_text = f"Thugoleons: -{self.examined_tile.thugoleon_consumption}/s"
-                draw_text(screen, consumption_text, text_size, (255, 100, 100), (resource_x, resource_y))
-                resource_y += text_size
-
-            # Production section
-            resource_y += text_size  # Add some spacing
-            draw_text(screen, "Production:", text_size, (180, 255, 180), (resource_x, resource_y))
-            resource_y += text_size
-
-            # Production attributes
-            if hasattr(self.examined_tile, 'thugoleon_production_rate'):
-                production_text = f"Thugoleons: +{self.examined_tile.thugoleon_production_rate}/s"
-                draw_text(screen, production_text, text_size, (100, 255, 100), (resource_x, resource_y))
-                resource_y += text_size
-
-            if hasattr(self.examined_tile, 'electricity_production_rate'):
-                production_text = f"Electricity: +{self.examined_tile.electricity_production_rate}/s"
-                draw_text(screen, production_text, text_size, (100, 255, 100), (resource_x, resource_y))
-                resource_y += text_size
-
-            if hasattr(self.examined_tile, 'water_production_rate'):
-                production_text = f"Water: +{self.examined_tile.water_production_rate}/s"
-                draw_text(screen, production_text, text_size, (100, 255, 100), (resource_x, resource_y))
-                resource_y += text_size
-
-            # Add building description if available
-            if hasattr(self.world.building_attributes, 'description') and self.examined_tile.name in self.world.building_attributes.description:
-                description = self.world.building_attributes.description[self.examined_tile.name]
-                # Render description text with word wrapping to fit the panel
-                max_width = self.select_rect.width - 20  # Leave a margin
-
-                # Position for the description text (below the image)
-                desc_y = self.height * 0.74 + 40
-                desc_x = self.width * 0.35 + 10
-
-                # Simple word wrapping
-                words = description.split(' ')
-                line = ''
-                y_offset = 0
-
-                for word in words:
-                    test_line = line + word + ' '
-                    test_width = pg.font.SysFont(None, text_size).size(test_line)[0]
-
-                    if test_width > max_width:
-                        draw_text(screen, line, description_text_size, (255, 255, 255), (desc_x, desc_y + y_offset))
-                        y_offset += text_size
-                        line = word + ' '
-                    else:
-                        line = test_line
-
-                # Render the last line
-                if line:
-                    draw_text(screen, line, text_size, (255, 255, 255), (desc_x, desc_y + y_offset))
-
         for tile in self.tiles:
             icon = tile["icon"].copy()
             if not tile["affordable"]:
                 icon.set_alpha(100)
             screen.blit(icon, tile["rect"].topleft)
 
+        # select hud
+        if self.examined_tile is not None:
+            self.draw_select_hud(screen)
+            
         # resources
         pos = self.width - 750
         for resource, resource_value in self.resource_manager.resources.items():
@@ -231,6 +144,93 @@ class Hud:
             screen.blit(self.frame_surface, (0, 0))
             draw_text(screen, "Delete mode active, press the key again to deactivate", 60, (255, 0, 0),
                       (self.width * 0.02, self.height * 0.95))
+    def draw_select_hud(self, screen):
+        w, h = self.select_rect.width, self.select_rect.height
+        screen.blit(self.select_surface, (self.width * 0.35, self.height * 0.74))
+        img = self.examined_tile.image.copy()
+        img_scale = self.scale_image(img, h=h * 0.7)
+        screen.blit(img_scale, (self.width * 0.35 + 85, self.height * 0.79 + 45))
+
+        # Add building name
+        draw_text(screen, self.examined_tile.name.replace('_', ' ').title(), 40, (255, 255, 255),
+                (self.width * 0.35 + 10, self.height * 0.74 + 10))
+
+        # Display resource production/consumption information
+        text_size = 28
+        description_text_size = 25
+        resource_y = self.height * 0.79 + 50
+        resource_x = self.width * 0.5 + 100
+
+        # Consumption section header
+        draw_text(screen, "Consumption:", text_size, (255, 180, 180), (resource_x, resource_y))
+        resource_y += text_size
+
+        # Check if the building has consumption attributes
+        if hasattr(self.examined_tile, 'electricity_consumption'):
+            consumption_text = f"Electricity: -{self.examined_tile.electricity_consumption}/s"
+            draw_text(screen, consumption_text, text_size, (255, 100, 100), (resource_x, resource_y))
+            resource_y += text_size
+
+        if hasattr(self.examined_tile, 'water_consumption'):
+            consumption_text = f"Water: -{self.examined_tile.water_consumption}/s"
+            draw_text(screen, consumption_text, text_size, (255, 100, 100), (resource_x, resource_y))
+            resource_y += text_size
+
+        if hasattr(self.examined_tile, 'thugoleon_consumption'):
+            consumption_text = f"Thugoleons: -{self.examined_tile.thugoleon_consumption}/s"
+            draw_text(screen, consumption_text, text_size, (255, 100, 100), (resource_x, resource_y))
+            resource_y += text_size
+
+        # Production section
+        resource_y += text_size  # Add some spacing
+        draw_text(screen, "Production:", text_size, (180, 255, 180), (resource_x, resource_y))
+        resource_y += text_size
+
+        # Production attributes
+        if hasattr(self.examined_tile, 'thugoleon_production_rate'):
+            production_text = f"Thugoleons: +{self.examined_tile.thugoleon_production_rate}/s"
+            draw_text(screen, production_text, text_size, (100, 255, 100), (resource_x, resource_y))
+            resource_y += text_size
+
+        if hasattr(self.examined_tile, 'electricity_production_rate'):
+            production_text = f"Electricity: +{self.examined_tile.electricity_production_rate}/s"
+            draw_text(screen, production_text, text_size, (100, 255, 100), (resource_x, resource_y))
+            resource_y += text_size
+
+        if hasattr(self.examined_tile, 'water_production_rate'):
+            production_text = f"Water: +{self.examined_tile.water_production_rate}/s"
+            draw_text(screen, production_text, text_size, (100, 255, 100), (resource_x, resource_y))
+            resource_y += text_size
+
+        # Add building description if available
+        if hasattr(self.world.building_attributes, 'description') and self.examined_tile.name in self.world.building_attributes.description:
+            description = self.world.building_attributes.description[self.examined_tile.name]
+            # Render description text with word wrapping to fit the panel
+            max_width = self.select_rect.width - 20  # Leave a margin
+
+            # Position for the description text (below the image)
+            desc_y = self.height * 0.74 + 40
+            desc_x = self.width * 0.35 + 10
+
+            # Simple word wrapping
+            words = description.split(' ')
+            line = ''
+            y_offset = 0
+
+            for word in words:
+                test_line = line + word + ' '
+                test_width = pg.font.SysFont(None, text_size).size(test_line)[0]
+
+                if test_width > max_width:
+                    draw_text(screen, line, description_text_size, (255, 255, 255), (desc_x, desc_y + y_offset))
+                    y_offset += text_size
+                    line = word + ' '
+                else:
+                    line = test_line
+
+            # Render the last line
+            if line:
+                draw_text(screen, line, text_size, (255, 255, 255), (desc_x, desc_y + y_offset))
 
     def draw_building_info(self, screen):
         # Get mouse position
