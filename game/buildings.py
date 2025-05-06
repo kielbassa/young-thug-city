@@ -3,11 +3,38 @@ import pygame as pg
 class Buildings:
     def __init__(self):
         self.description = {
-            "factory": "A factory that produces thugoleons.",
+            "factory": "A factory that employs citizens and produces thugoleons.",
             "residential_building": "A residential building that provides housing for citizens.",
             "solar_panels": "Solar panels that generate electricity.",
-            "water_treatment_plant": "A water treatment plant that cleans and purifies water.",
-            "road": "A road that connects buildings and allows citizens to move around."
+            "water_treatment_plant": "A water treatment plant that pumps, cleans and purifies water.",
+        }
+
+        self.consumption = {
+            "factory": {
+                "electricity": 2,
+                "water": 1,
+            },
+            "residential_building": {
+                "electricity": 1,
+                "water": 2,
+            },
+            "solar_panels": {
+                "water": 1,
+                "thugoleons": 1,
+            },
+            "water_treatment_plant": {
+                "electricity": 1,
+                "thugoleons": 1,
+            },
+        }
+
+        self.production = {
+            "factory": {
+                "thugoleons": 5,
+            },
+            "residential_building": {
+                "thugoleons": 2,
+            }
         }
 
 class Factory:

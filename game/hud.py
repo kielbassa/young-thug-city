@@ -1,5 +1,6 @@
 import pygame as pg
 from .utils import draw_text
+from .buildings import Buildings
 
 class Hud:
 
@@ -7,6 +8,7 @@ class Hud:
         self.resource_manager = resource_manager
         self.width = width
         self.height = height
+        self.building = Buildings()
 
         self.hud_color = (198, 155, 93, 175)
 
@@ -27,7 +29,7 @@ class Hud:
         self.build_surface.fill(self.hud_color)
 
         #select hud
-        self.select_surface = pg.Surface((width * 0.3, height* 0.2), pg.SRCALPHA)
+        self.select_surface = pg.Surface((width * 0.3, height* 0.25), pg.SRCALPHA)
         self.select_rect = self.select_surface.get_rect(topleft=(self.width * 0.35, self.height*0.8))
         self.select_surface.fill(self.hud_color)
 
@@ -46,7 +48,6 @@ class Hud:
 
         # Create a transparent surface for the red frame
         self.frame_surface = pg.Surface((width, height), pg.SRCALPHA)
-
 
 
     def update(self):
@@ -91,7 +92,7 @@ class Hud:
 
     def draw(self, screen):
         # resource
-        screen.blit(self.resources_surface, (0,0))
+        screen.blit(self.resources_surface, (0, 0))
 
         # build hud
         screen.blit(self.build_surface, (self.building_hud_x, self.building_hud_y))
@@ -100,68 +101,61 @@ class Hud:
         # select hud
         if self.examined_tile is not None:
             w, h = self.select_rect.width, self.select_rect.height
-            screen.blit(self.select_surface, (self.width * 0.35, self.height * 0.79))
+            screen.blit(self.select_surface, (self.width * 0.35, self.height * 0.74))
             img = self.examined_tile.image.copy()
-            img_scale = self.scale_image(img, h=h*0.7)
-            screen.blit(img_scale, (self.width * 0.35 + 10, self.height * 0.79 + 45))
+            img_scale = self.scale_image(img, h=h * 0.7)
+            screen.blit(img_scale, (self.width * 0.35 + 50, self.height * 0.79 + 45))
 
             # Add building name
-            draw_text(screen, self.examined_tile.name, 40, (255, 255, 255),
-                     (self.width * 0.35 + 10, self.height * 0.79 + 10))
+            draw_text(screen, self.examined_tile.name.replace('_', ' ').title(), 40, (255, 255, 255),
+                      (self.width * 0.35 + 10, self.height * 0.74 + 10))
 
             # Display resource production/consumption information
-            font = pg.font.SysFont(None, 30)
-            resource_y = self.height * 0.79 + 45
-            resource_x = self.width * 0.5
+            text_size = 28
+            description_text_size = 25
+            resource_y = self.height * 0.79 + 50
+            resource_x = self.width * 0.5 + 100
 
             # Consumption section header
-            consumption_header = font.render("Consumption:", True, (255, 180, 180))
-            screen.blit(consumption_header, (resource_x, resource_y))
-            resource_y += font.get_linesize()
+            draw_text(screen, "Consumption:", text_size, (255, 180, 180), (resource_x, resource_y))
+            resource_y += text_size
 
             # Check if the building has consumption attributes
             if hasattr(self.examined_tile, 'electricity_consumption'):
                 consumption_text = f"Electricity: -{self.examined_tile.electricity_consumption}/s"
-                text_surface = font.render(consumption_text, True, (255, 100, 100))
-                screen.blit(text_surface, (resource_x, resource_y))
-                resource_y += font.get_linesize()
+                draw_text(screen, consumption_text, text_size, (255, 100, 100), (resource_x, resource_y))
+                resource_y += text_size
 
             if hasattr(self.examined_tile, 'water_consumption'):
                 consumption_text = f"Water: -{self.examined_tile.water_consumption}/s"
-                text_surface = font.render(consumption_text, True, (255, 100, 100))
-                screen.blit(text_surface, (resource_x, resource_y))
-                resource_y += font.get_linesize()
+                draw_text(screen, consumption_text, text_size, (255, 100, 100), (resource_x, resource_y))
+                resource_y += text_size
 
             if hasattr(self.examined_tile, 'thugoleon_consumption'):
                 consumption_text = f"Thugoleons: -{self.examined_tile.thugoleon_consumption}/s"
-                text_surface = font.render(consumption_text, True, (255, 100, 100))
-                screen.blit(text_surface, (resource_x, resource_y))
-                resource_y += font.get_linesize()
+                draw_text(screen, consumption_text, text_size, (255, 100, 100), (resource_x, resource_y))
+                resource_y += text_size
 
             # Production section
-            resource_y += font.get_linesize()  # Add some spacing
-            production_header = font.render("Production:", True, (180, 255, 180))
-            screen.blit(production_header, (resource_x, resource_y))
-            resource_y += font.get_linesize()
+            resource_y += text_size  # Add some spacing
+            draw_text(screen, "Production:", text_size, (180, 255, 180), (resource_x, resource_y))
+            resource_y += text_size
 
             # Production attributes
             if hasattr(self.examined_tile, 'thugoleon_production_rate'):
                 production_text = f"Thugoleons: +{self.examined_tile.thugoleon_production_rate}/s"
-                text_surface = font.render(production_text, True, (100, 255, 100))
-                screen.blit(text_surface, (resource_x, resource_y))
-                resource_y += font.get_linesize()
+                draw_text(screen, production_text, text_size, (100, 255, 100), (resource_x, resource_y))
+                resource_y += text_size
 
             if hasattr(self.examined_tile, 'electricity_production_rate'):
                 production_text = f"Electricity: +{self.examined_tile.electricity_production_rate}/s"
-                text_surface = font.render(production_text, True, (100, 255, 100))
-                screen.blit(text_surface, (resource_x, resource_y))
-                resource_y += font.get_linesize()
+                draw_text(screen, production_text, text_size, (100, 255, 100), (resource_x, resource_y))
+                resource_y += text_size
 
             if hasattr(self.examined_tile, 'water_production_rate'):
                 production_text = f"Water: +{self.examined_tile.water_production_rate}/s"
-                text_surface = font.render(production_text, True, (100, 255, 100))
-                screen.blit(text_surface, (resource_x, resource_y))
-                resource_y += font.get_linesize()
+                draw_text(screen, production_text, text_size, (100, 255, 100), (resource_x, resource_y))
+                resource_y += text_size
 
             # Add building description if available
             if hasattr(self.world.building_attributes, 'description') and self.examined_tile.name in self.world.building_attributes.description:
@@ -170,7 +164,7 @@ class Hud:
                 max_width = self.select_rect.width - 20  # Leave a margin
 
                 # Position for the description text (below the image)
-                desc_y = self.height * 0.79 + 40 + img_scale.get_height() + 10
+                desc_y = self.height * 0.74 + 40
                 desc_x = self.width * 0.35 + 10
 
                 # Simple word wrapping
@@ -180,20 +174,18 @@ class Hud:
 
                 for word in words:
                     test_line = line + word + ' '
-                    test_width = font.size(test_line)[0]
+                    test_width = pg.font.SysFont(None, text_size).size(test_line)[0]
 
                     if test_width > max_width:
-                        text_surface = font.render(line, True, (255, 255, 255))
-                        screen.blit(text_surface, (desc_x, desc_y + y_offset))
-                        y_offset += font.get_linesize()
+                        draw_text(screen, line, description_text_size, (255, 255, 255), (desc_x, desc_y + y_offset))
+                        y_offset += text_size
                         line = word + ' '
                     else:
                         line = test_line
 
                 # Render the last line
                 if line:
-                    text_surface = font.render(line, True, (255, 255, 255))
-                    screen.blit(text_surface, (desc_x, desc_y + y_offset))
+                    draw_text(screen, line, text_size, (255, 255, 255), (desc_x, desc_y + y_offset))
 
         for tile in self.tiles:
             icon = tile["icon"].copy()
@@ -213,11 +205,11 @@ class Hud:
             self.draw_building_info(screen)
 
         if hasattr(self, 'world') and self.world.temp_tile is not None and self.selected_tile is not None:
-                if self.world.temp_tile["buildable"] or (
-                    self.world.temp_tile.get("water_resource", False) and
-                    self.selected_tile["name"] == "water_treatment_plant"
-                ):
-                    self.draw_building_preview(screen)
+            if self.world.temp_tile["buildable"] or (
+                self.world.temp_tile.get("water_resource", False) and
+                self.selected_tile["name"] == "water_treatment_plant"
+            ):
+                self.draw_building_preview(screen)
 
         # Display a message if delete mode is active
         if self.delete_mode:
@@ -236,131 +228,8 @@ class Hud:
 
             # Blit the frame surface onto the screen
             screen.blit(self.frame_surface, (0, 0))
-            draw_text(screen, "Delete mode active, press the key again to deactivate", 60, (255, 0, 0), (self.width * 0.02, self.height * 0.95))
-
-    def draw_building_preview(self, screen):
-        # Clear preview surface
-        self.preview_surface.fill(self.hud_color)
-
-        # Get grid position and calculate potential production
-        grid_pos = self.world.mouse_to_grid(pg.mouse.get_pos()[0], pg.mouse.get_pos()[1], self.world.camera.scroll)
-        building_name = self.selected_tile["name"]
-
-        # Only display for production buildings
-        if building_name in ["factory", "residential_building", "solar_panels", "water_treatment_plant"]:
-            # Draw the preview panel
-            screen.blit(self.preview_surface, self.preview_rect.topleft)
-
-            # Panel title
-            draw_text(screen, f"{building_name.replace('_', ' ').title()} Resource preview", 30,
-                     (255, 255, 255), (self.preview_rect.x + 10, self.preview_rect.y + 10))
-
-            # Calculate potential resource values
-            font = pg.font.SysFont(None, 26)
-            y_offset = 45
-
-            # Draw building costs
-            cost_text = f"Cost: {self.resource_manager.costs[building_name]['thugoleons']} thugoleons"
-            cost_surface = font.render(cost_text, True, (255, 200, 100))
-            screen.blit(cost_surface, (self.preview_rect.x + 10, self.preview_rect.y + y_offset))
-            y_offset += 30
-
-            # Draw production estimates
-            if building_name == "factory":
-                prod_text = "Production: +5 thugoleons/s"
-                cons_text1 = "Consumes: 2 electricity/s"
-                cons_text2 = "Consumes: 1 water/s"
-
-                prod_surface = font.render(prod_text, True, (100, 255, 100))
-                screen.blit(prod_surface, (self.preview_rect.x + 10, self.preview_rect.y + y_offset))
-                y_offset += 25
-
-                cons_surface1 = font.render(cons_text1, True, (255, 100, 100))
-                screen.blit(cons_surface1, (self.preview_rect.x + 10, self.preview_rect.y + y_offset))
-                y_offset += 25
-
-                cons_surface2 = font.render(cons_text2, True, (255, 100, 100))
-                screen.blit(cons_surface2, (self.preview_rect.x + 10, self.preview_rect.y + y_offset))
-
-            elif building_name == "residential_building":
-                prod_text = "Production: +2 thugoleons/s"
-                cons_text1 = "Consumes: 1 electricity/s"
-                cons_text2 = "Consumes: 2 water/s"
-
-                prod_surface = font.render(prod_text, True, (100, 255, 100))
-                screen.blit(prod_surface, (self.preview_rect.x + 10, self.preview_rect.y + y_offset))
-                y_offset += 25
-
-                cons_surface1 = font.render(cons_text1, True, (255, 100, 100))
-                screen.blit(cons_surface1, (self.preview_rect.x + 10, self.preview_rect.y + y_offset))
-                y_offset += 25
-
-                cons_surface2 = font.render(cons_text2, True, (255, 100, 100))
-                screen.blit(cons_surface2, (self.preview_rect.x + 10, self.preview_rect.y + y_offset))
-
-            elif building_name == "solar_panels":
-                # Calculate potential electricity production based on elevation
-                potential_rate = round(self.world.world[grid_pos[0]][grid_pos[1]]["elevation"] *
-                                      self.world.resource_manager.ELECTRICITY_MULTIPLIER)
-
-                prod_text = f"Production: +{potential_rate} electricity/s"
-                cons_text1 = "Consumes: 1 water/s"
-                cons_text2 = "Consumes: 1 thugoleon/s"
-
-                prod_surface = font.render(prod_text, True, (100, 255, 100))
-                screen.blit(prod_surface, (self.preview_rect.x + 10, self.preview_rect.y + y_offset))
-                y_offset += 25
-
-                cons_surface1 = font.render(cons_text1, True, (255, 100, 100))
-                screen.blit(cons_surface1, (self.preview_rect.x + 10, self.preview_rect.y + y_offset))
-                y_offset += 25
-
-                cons_surface2 = font.render(cons_text2, True, (255, 100, 100))
-                screen.blit(cons_surface2, (self.preview_rect.x + 10, self.preview_rect.y + y_offset))
-
-            elif building_name == "water_treatment_plant":
-                # Calculate potential water production based on moisture
-                potential_rate = round(self.world.world[grid_pos[0]][grid_pos[1]]["moisture"] *
-                                      self.world.resource_manager.MOISTURE_MULTIPLIER)
-
-                prod_text = f"Production: +{potential_rate} water/s"
-                cons_text1 = "Consumes: 1 electricity/s"
-                cons_text2 = "Consumes: 1 thugoleon/s"
-
-                prod_surface = font.render(prod_text, True, (100, 255, 100))
-                screen.blit(prod_surface, (self.preview_rect.x + 10, self.preview_rect.y + y_offset))
-                y_offset += 25
-
-                cons_surface1 = font.render(cons_text1, True, (255, 100, 100))
-                screen.blit(cons_surface1, (self.preview_rect.x + 10, self.preview_rect.y + y_offset))
-                y_offset += 25
-
-                cons_surface2 = font.render(cons_text2, True, (255, 100, 100))
-                screen.blit(cons_surface2, (self.preview_rect.x + 10, self.preview_rect.y + y_offset))
-
-    def load_images(self):
-        residential_building = pg.image.load("assets/graphics/residential_building.png").convert_alpha()
-        factory = pg.image.load("assets/graphics/factory.png").convert_alpha()
-        solar_panels = pg.image.load("assets/graphics/solar_panels.png").convert_alpha()
-        water_treatment_plant = pg.image.load("assets/graphics/water_treatment_plant.png").convert_alpha()
-        road = pg.image.load("assets/graphics/road_tiles/road_1.png").convert_alpha()
-
-        return {"residential_building": residential_building, "factory": factory, "solar_panels": solar_panels, "water_treatment_plant": water_treatment_plant, "road": road}
-
-    def scale_image(self, image, w=None, h=None):
-        if w is None and h is None:
-            pass
-        elif h is None:
-            scale = w / image.get_width()
-            h = scale * image.get_height()
-            image = pg.transform.scale(image, (int(w), int(h)))
-        elif w is None:
-            scale = h / image.get_height()
-            w = scale * image.get_width()
-            image = pg.transform.scale(image, (int(w), int(h)))
-        else:
-            image = pg.transform.scale(image, (int(w), int(h)))
-        return image
+            draw_text(screen, "Delete mode active, press the key again to deactivate", 60, (255, 0, 0),
+                      (self.width * 0.02, self.height * 0.95))
 
     def draw_building_info(self, screen):
         # Get mouse position
@@ -410,3 +279,141 @@ class Hud:
             bg_rect.inflate_ip(10, 10)
             pg.draw.rect(screen, (0, 0, 0, 180), bg_rect)
             screen.blit(description_surface, description_rect)
+
+    def draw_building_preview(self, screen):
+        # Clear preview surface
+        self.preview_surface.fill(self.hud_color)
+
+        # Get grid position and calculate potential production
+        grid_pos = self.world.mouse_to_grid(pg.mouse.get_pos()[0], pg.mouse.get_pos()[1], self.world.camera.scroll)
+        building_name = self.selected_tile["name"]
+
+        # Only display for production buildings
+        if building_name in ["factory", "residential_building", "solar_panels", "water_treatment_plant"]:
+            # Draw the preview panel
+            screen.blit(self.preview_surface, self.preview_rect.topleft)
+
+            # Panel title
+            draw_text(screen, f"{building_name.replace('_', ' ').title()} resource preview", 30,
+                     (255, 255, 255), (self.preview_rect.x + 10, self.preview_rect.y + 10))
+
+            # Calculate potential resource values
+            font = pg.font.SysFont(None, 26)
+            y_offset = 45
+            y_margin = 25
+
+            # Draw building costs
+            cost_text = f"Cost: {self.resource_manager.costs[building_name]['thugoleons']} thugoleons"
+            cost_surface = font.render(cost_text, True, (255, 200, 100))
+            screen.blit(cost_surface, (self.preview_rect.x + 10, self.preview_rect.y + y_offset))
+            y_offset += 30
+
+            # Draw production estimates
+            if building_name == "factory":
+                thugoleon_production = self.building.production["factory"]["thugoleons"]
+                electricity_consumption = self.building.consumption["factory"]["electricity"]
+                water_consumption = self.building.consumption["factory"]["water"]
+
+                prod_text = f"Production: +{thugoleon_production} thugoleons/s"
+                cons_text1 = f"Consumes: +{electricity_consumption} electricity/s"
+                cons_text2 = f"Consumes: +{water_consumption} water/s"
+
+                prod_surface = font.render(prod_text, True, (100, 255, 100))
+                screen.blit(prod_surface, (self.preview_rect.x + 10, self.preview_rect.y + y_offset))
+                y_offset += y_margin
+
+                cons_surface1 = font.render(cons_text1, True, (255, 100, 100))
+                screen.blit(cons_surface1, (self.preview_rect.x + 10, self.preview_rect.y + y_offset))
+                y_offset += y_margin
+
+                cons_surface2 = font.render(cons_text2, True, (255, 100, 100))
+                screen.blit(cons_surface2, (self.preview_rect.x + 10, self.preview_rect.y + y_offset))
+
+            elif building_name == "residential_building":
+                thugoleon_production = self.building.production["residential_building"]["thugoleons"]
+                electricity_consumption = self.building.consumption["residential_building"]["electricity"]
+                water_consumption = self.building.consumption["residential_building"]["water"]
+
+                prod_text = f"Production: +{thugoleon_production} thugoleons/s"
+                cons_text1 = f"Consumes: +{electricity_consumption} electricity/s"
+                cons_text2 = f"Consumes: +{water_consumption} water/s"
+
+                prod_surface = font.render(prod_text, True, (100, 255, 100))
+                screen.blit(prod_surface, (self.preview_rect.x + 10, self.preview_rect.y + y_offset))
+                y_offset += y_margin
+
+                cons_surface1 = font.render(cons_text1, True, (255, 100, 100))
+                screen.blit(cons_surface1, (self.preview_rect.x + 10, self.preview_rect.y + y_offset))
+                y_offset += y_margin
+
+                cons_surface2 = font.render(cons_text2, True, (255, 100, 100))
+                screen.blit(cons_surface2, (self.preview_rect.x + 10, self.preview_rect.y + y_offset))
+
+            elif building_name == "solar_panels":
+                # Calculate potential electricity production based on elevation
+                potential_rate = round(self.world.world[grid_pos[0]][grid_pos[1]]["elevation"] *
+                                      self.world.resource_manager.ELECTRICITY_MULTIPLIER)
+                water_consumption = self.building.consumption["solar_panels"]["water"]
+                thugoleon_consumption = self.building.consumption["solar_panels"]["thugoleons"]
+
+                prod_text = f"Production: +{potential_rate} electricity/s"
+                cons_text1 = f"Consumes: +{water_consumption} water/s"
+                cons_text2 = f"Consumes: +{thugoleon_consumption} thugoleon/s"
+
+                prod_surface = font.render(prod_text, True, (100, 255, 100))
+                screen.blit(prod_surface, (self.preview_rect.x + 10, self.preview_rect.y + y_offset))
+                y_offset += y_margin
+
+                cons_surface1 = font.render(cons_text1, True, (255, 100, 100))
+                screen.blit(cons_surface1, (self.preview_rect.x + 10, self.preview_rect.y + y_offset))
+                y_offset += y_margin
+
+                cons_surface2 = font.render(cons_text2, True, (255, 100, 100))
+                screen.blit(cons_surface2, (self.preview_rect.x + 10, self.preview_rect.y + y_offset))
+
+            elif building_name == "water_treatment_plant":
+                # Calculate potential water production based on moisture
+                potential_rate = round(self.world.world[grid_pos[0]][grid_pos[1]]["moisture"] *
+                                      self.world.resource_manager.MOISTURE_MULTIPLIER)
+                electricity_consumption = self.building.consumption["water_treatment_plant"]["electricity"]
+                thugoleon_consumption = self.building.consumption["water_treatment_plant"]["thugoleons"]
+
+                prod_text = f"Production: +{potential_rate} water/s"
+                cons_text1 = f"Consumes: +{electricity_consumption} electricity/s"
+                cons_text2 = f"Consumes: +{thugoleon_consumption} thugoleon/s"
+
+                prod_surface = font.render(prod_text, True, (100, 255, 100))
+                screen.blit(prod_surface, (self.preview_rect.x + 10, self.preview_rect.y + y_offset))
+                y_offset += y_margin
+
+                cons_surface1 = font.render(cons_text1, True, (255, 100, 100))
+                screen.blit(cons_surface1, (self.preview_rect.x + 10, self.preview_rect.y + y_offset))
+                y_offset += y_margin
+
+                cons_surface2 = font.render(cons_text2, True, (255, 100, 100))
+                screen.blit(cons_surface2, (self.preview_rect.x + 10, self.preview_rect.y + y_offset))
+
+    def load_images(self):
+        residential_building = pg.image.load("assets/graphics/residential_building.png").convert_alpha()
+        factory = pg.image.load("assets/graphics/factory.png").convert_alpha()
+        solar_panels = pg.image.load("assets/graphics/solar_panels.png").convert_alpha()
+        water_treatment_plant = pg.image.load("assets/graphics/water_treatment_plant.png").convert_alpha()
+        road = pg.image.load("assets/graphics/road_tiles/road_1.png").convert_alpha()
+
+        return {"residential_building": residential_building, "factory": factory, "solar_panels": solar_panels, "water_treatment_plant": water_treatment_plant, "road": road}
+
+    def scale_image(self, image, w=None, h=None):
+        if w is None and h is None:
+            pass
+        elif h is None:
+            scale = w / image.get_width()
+            h = scale * image.get_height()
+            image = pg.transform.scale(image, (int(w), int(h)))
+        elif w is None:
+            scale = h / image.get_height()
+            w = scale * image.get_width()
+            image = pg.transform.scale(image, (int(w), int(h)))
+        else:
+            image = pg.transform.scale(image, (int(w), int(h)))
+        return image
+

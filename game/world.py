@@ -441,7 +441,7 @@ class World:
 
     def can_place_tile(self, grid_pos):
         mouse_on_panel = False
-        for rect in [self.hud.resources_rect, self.hud.build_rect, self.hud.select_rect]:
+        for rect in [self.hud.resources_rect, self.hud.build_rect]:
             if rect.collidepoint(pg.mouse.get_pos()):
                 mouse_on_panel = True
                 break
