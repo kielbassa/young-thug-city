@@ -7,6 +7,7 @@ from .utils import draw_text
 from .camera import Camera
 from .hud import Hud
 from .resource_manager import ResourceManager
+from .buildings import Buildings
 from .citizens import Citizen
 
 class Game:
@@ -14,6 +15,9 @@ class Game:
         self.screen = screen
         self.clock = clock
         self.width, self.height = screen.get_size()
+
+        # buildings
+        self.buildings = Buildings()
 
         # entities
         self.entities = []
@@ -25,7 +29,7 @@ class Game:
         self.hud = Hud(self.resource_manager,self.width, self.height)
 
         # world
-        self.world = World(self.resource_manager, self.entities, self.hud, self.clock, WORLD_SIZE, WORLD_SIZE, self.width, self.height)
+        self.world = World(self.buildings, self.resource_manager, self.entities, self.hud, self.clock, WORLD_SIZE, WORLD_SIZE, self.width, self.height)
         # citizens
         for _ in range(10):
             # Find a random walkable tile

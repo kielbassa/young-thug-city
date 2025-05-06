@@ -6,7 +6,8 @@ class Road:
         self.name = "road"
         self.tiles = self.load_images()
         self.image = self.tiles["straight_13"]  # Default texture
-        self.rect = self.image.get_rect(topleft=pos)
+        self.rect = self.image.get_rect(topleft=pos) if pos else None
+        self.description = "A road tile that connects buildings and allows citizens and resources to move around."
 
     def update_texture(self, grid_pos, roads):
         # Determine connections to adjacent tiles

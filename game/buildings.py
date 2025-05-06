@@ -1,5 +1,15 @@
 import pygame as pg
 
+class Buildings:
+    def __init__(self):
+        self.description = {
+            "factory": "A factory that produces thugoleons.",
+            "residential_building": "A residential building that provides housing for citizens.",
+            "solar_panels": "Solar panels that generate electricity.",
+            "water_treatment_plant": "A water treatment plant that cleans and purifies water.",
+            "road": "A road that connects buildings and allows citizens to move around."
+        }
+
 class Factory:
     def __init__(self, pos, resource_manager):
         image = pg.image.load("assets/graphics/factory.png")

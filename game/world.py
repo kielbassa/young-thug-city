@@ -6,8 +6,9 @@ from .buildings import Residential_Building, Factory, Solar_Panels, Water_Treatm
 from .roads import Road
 
 class World:
-    def __init__(self,resource_manager, entities, hud, clock, grid_length_x, grid_length_y, width, height, seed=None):
+    def __init__(self, buildings, resource_manager, entities, hud, clock, grid_length_x, grid_length_y, width, height, seed=None):
         self.resource_manager = resource_manager
+        self.building_attributes = buildings
         self.entities = entities
         self.hud = hud
         self.clock = clock
@@ -92,24 +93,52 @@ class World:
                 buildable = self.world[grid_pos[0]][grid_pos[1]]["buildable"]
                 empty = self.world[grid_pos[0]][grid_pos[1]]["empty"]
                 user_built = self.world[grid_pos[0]][grid_pos[1]]["user_built"]
+                tile_type = self.world[grid_pos[0]][grid_pos[1]]["tile"]
+
+                # Check if the building can be placed on this tile type
+                building_can_be_placed_here = True
+
+                # Special case for water treatment plant - can be built on mud
+                if self.hud.selected_tile["name"] == "water_treatment_plant":
+                    building_can_be_placed_here = tile_type == "mud"
+                    # For water treatment plant, we need to override the default buildable check
+                    # since mud tiles aren't normally buildable
+                    if tile_type == "mud":
+                        buildable = True
 
                 self.temp_tile = {
                         "image": img,
                         "render_pos": render_pos,
                         "iso_poly": iso_poly,
-                        "buildable": buildable and self.resource_manager.is_affordable(self.hud.selected_tile["name"]),  # Check if affordable
+                        "buildable": buildable and self.resource_manager.is_affordable(self.hud.selected_tile["name"]) and building_can_be_placed_here,
                         "empty": empty,
                         "user_built": user_built,
-                        "road_access": self.adjecent_roads(grid_pos)  # Check if there are adjacent roads
+                        "road_access": self.adjecent_roads(grid_pos),  # Check if there are adjacent roads
+                        "water_resource": tile_type == "mud" and self.hud.selected_tile["name"] == "water_treatment_plant",
                     }
 
-                if (mouse_action[0] and
-                    buildable and
-                    self.adjecent_roads(grid_pos) and  # Check if there are adjacent roads
-                    self.buildings[grid_pos[0]][grid_pos[1]] is None and
-                    self.roads[grid_pos[0]][grid_pos[1]] is None and
-                    self.resource_manager.is_affordable(self.hud.selected_tile["name"])):  # Check if affordable
+                # Special placement conditions for water treatment plant
+                if self.hud.selected_tile["name"] == "water_treatment_plant" and tile_type == "mud":
+                    can_place = (
+                        mouse_action[0] and
+                        self.adjecent_roads(grid_pos) and
+                        self.buildings[grid_pos[0]][grid_pos[1]] is None and
+                        self.roads[grid_pos[0]][grid_pos[1]] is None and
+                        self.resource_manager.is_affordable(self.hud.selected_tile["name"])
+                    )
+                else:
+                    # Normal placement conditions for other buildings
+                    can_place = (
+                        mouse_action[0] and
+                        buildable and
+                        self.adjecent_roads(grid_pos) and
+                        self.buildings[grid_pos[0]][grid_pos[1]] is None and
+                        self.roads[grid_pos[0]][grid_pos[1]] is None and
+                        building_can_be_placed_here and
+                        self.resource_manager.is_affordable(self.hud.selected_tile["name"])
+                    )
 
+                if can_place:
                     ent = None
                     match self.hud.selected_tile["name"]:
                         case "road":
@@ -137,8 +166,8 @@ class World:
                     self.world[grid_pos[0]][grid_pos[1]]["user_built"] = True
                     self.collision_matrix[grid_pos[1]][grid_pos[0]] = 0
                     self.click_sound.play()
-                        
-                    
+
+
         elif self.hud.delete_mode and mouse_action[0]:  # Check if delete mode is active and left-click
             self.temp_tile = None
             grid_pos = self.mouse_to_grid(mouse_pos[0], mouse_pos[1], camera.scroll)
@@ -159,7 +188,7 @@ class World:
                 self.world[grid_pos[0]][grid_pos[1]]["walkable"] = True
                 self.world[grid_pos[0]][grid_pos[1]]["user_built"] = False
                 self.collision_matrix[grid_pos[1]][grid_pos[0]] = 1
-                
+
                 # Update road textures after deletion
                 self.update_road_textures(grid_pos)
         else:
@@ -172,105 +201,129 @@ class World:
                     self.hud.examined_tile = building
 
     def draw(self, screen, camera):
-        screen.blit(self.grass_tiles, (camera.scroll.x, camera.scroll.y))
+            screen.blit(self.grass_tiles, (camera.scroll.x, camera.scroll.y))
 
-        for x in range(self.grid_length_x):
-            for y in range(self.grid_length_y):
-                render_pos = self.world[x][y]["render_pos"]
-                # draw world tiles
-                tile = self.world[x][y]["tile"]
-                if tile != "":
-                    if tile == "water":
-                        # Render animated water frame
+            for x in range(self.grid_length_x):
+                for y in range(self.grid_length_y):
+                    render_pos = self.world[x][y]["render_pos"]
+                    # draw world tiles
+                    tile = self.world[x][y]["tile"]
+                    if tile != "":
+                        if tile == "water":
+                            # Render animated water frame
 
-                        water_frame = self.water_frames[self.animation_frame % len(self.water_frames)]
-                        screen.blit(water_frame,
+                            water_frame = self.water_frames[self.animation_frame % len(self.water_frames)]
+                            screen.blit(water_frame,
+                                        (render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
+                                        render_pos[1] - (water_frame.get_height() - 2 * TILE_SIZE) + camera.scroll.y))
+                        else:
+                            # Render other tiles normally
+                            screen.blit(self.tiles[tile],
+                                        (render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
+                                        render_pos[1] - (self.tiles[tile].get_height() - 2 * TILE_SIZE) + camera.scroll.y))
+
+                    # draw roads
+                    road = self.roads[x][y]
+                    if road is not None:
+                        screen.blit(road.image,
                                     (render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
-                                    render_pos[1] - (water_frame.get_height() - 2 * TILE_SIZE) + camera.scroll.y))
+                                    render_pos[1] - (road.image.get_height() - 2 * TILE_SIZE) + camera.scroll.y))
+                    # draw buildings
+                    building = self.buildings[x][y]
+                    if building is not None:
+                        screen.blit(building.image,
+                                    (render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
+                                    render_pos[1] - (building.image.get_height() - 2 * TILE_SIZE) + camera.scroll.y))
+                        if self.examine_tile is not None:
+                            if (x==self.examine_tile[0] and y==self.examine_tile[1]):
+                                mask = pg.mask.from_surface(building.image).outline()
+                                mask = [(x + render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
+                                        y + render_pos[1] - (building.image.get_height() - 2 * TILE_SIZE) + camera.scroll.y
+                                        ) for x, y in mask]
+                                pg.draw.polygon(screen, (255, 255, 255), mask, 3)
+
+                    # draw citizens
+                    citizen = self.citizens[x][y]
+                    if citizen is not None:
+                        screen.blit(citizen.image,
+                                    (citizen.current_pos.x + self.grass_tiles.get_width()/2 + camera.scroll.x,
+                                     citizen.current_pos.y - (citizen.image.get_height() - 1.5*TILE_SIZE) + camera.scroll.y))
+
+                    # Draw red polygon around the tile in delete mode
+                    if self.hud.delete_mode:
+                        grid_pos = self.mouse_to_grid(pg.mouse.get_pos()[0], pg.mouse.get_pos()[1], camera.scroll)
+                        if grid_pos == (x, y):
+                            iso_poly = self.world[x][y]["iso_poly"]
+                            iso_poly = [(px + self.grass_tiles.get_width() / 2 + camera.scroll.x,
+                                        py + camera.scroll.y + 0.5*TILE_SIZE) for px, py in iso_poly]
+
+                            # Create a transparent surface for the polygon
+                            polygon_surface = pg.Surface(screen.get_size(), pg.SRCALPHA)
+                            pg.draw.polygon(polygon_surface, (255, 0, 0, 128), iso_poly)  # Red with 50% transparency
+                            screen.blit(polygon_surface, (0, 0))
+
+
+            if self.temp_tile is not None:
+                iso_poly = self.temp_tile["iso_poly"]
+                iso_poly = [(x + self.grass_tiles.get_width()/2 + camera.scroll.x, y - (self.temp_tile["image"].get_height() - 2.5*TILE_SIZE) + camera.scroll.y) for x, y in iso_poly]
+                if self.temp_tile["buildable"] or self.temp_tile["water_resource"] and self.hud.selected_tile["name"] == "water_treatment_plant":
+                    pg.draw.polygon(screen, (255, 255, 255), iso_poly, 3)
+                elif self.temp_tile["user_built"]:
+                    pg.draw.polygon(screen, (0, 0, 255), iso_poly, 3)
+                else:
+                    pg.draw.polygon(screen, (255, 0, 0), iso_poly, 3)
+                render_pos = self.temp_tile["render_pos"]
+                screen.blit(self.temp_tile["image"],
+                            (
+                                render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
+                                render_pos[1] - (self.temp_tile["image"].get_height() - 2 * TILE_SIZE) + camera.scroll.y)
+                            )
+
+                # Get mouse position
+                mouse_pos = pg.mouse.get_pos()
+
+                # Get the building cost
+                building_name = self.hud.selected_tile["name"]
+                cost_info = self.resource_manager.costs[building_name]
+
+                # Access building description from the buildings instance
+                building_name = self.hud.selected_tile["name"]
+                if building_name == "road":
+                    road_attributes = Road(None)
+                    description_text = f"Description: {road_attributes.description}"
+                else:
+                    # For other buildings, get the description from the Buildings class
+                    if hasattr(self.building_attributes, 'description') and building_name in self.building_attributes.description:
+                        description_text = f"Description: {self.building_attributes.description[building_name]}"
                     else:
-                        # Render other tiles normally
-                        screen.blit(self.tiles[tile],
-                                    (render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
-                                    render_pos[1] - (self.tiles[tile].get_height() - 2 * TILE_SIZE) + camera.scroll.y))
-                        
-                # draw roads
-                road = self.roads[x][y]
-                if road is not None:
-                    screen.blit(road.image,
-                                (render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
-                                render_pos[1] - (road.image.get_height() - 2 * TILE_SIZE) + camera.scroll.y))
-                # draw buildings
-                building = self.buildings[x][y]
-                if building is not None:
-                    screen.blit(building.image,
-                                (render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
-                                render_pos[1] - (building.image.get_height() - 2 * TILE_SIZE) + camera.scroll.y))
-                    if self.examine_tile is not None:
-                        if (x==self.examine_tile[0] and y==self.examine_tile[1]):
-                            mask = pg.mask.from_surface(building.image).outline()
-                            mask = [(x + render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
-                                    y + render_pos[1] - (building.image.get_height() - 2 * TILE_SIZE) + camera.scroll.y
-                                    ) for x, y in mask]
-                            pg.draw.polygon(screen, (255, 255, 255), mask, 3)
+                        description_text = ""
+                # Create cost text
+                cost_text = f"Cost: {cost_info['thugoleons']} thugoleons"
 
-                # draw citizens
-                citizen = self.citizens[x][y]
-                if citizen is not None:
-                    screen.blit(citizen.image,
-                                (citizen.current_pos.x + self.grass_tiles.get_width()/2 + camera.scroll.x,
-                                 citizen.current_pos.y - (citizen.image.get_height() - 1.5*TILE_SIZE) + camera.scroll.y))
-                    
-                # Draw red polygon around the tile in delete mode
-                if self.hud.delete_mode:
-                    grid_pos = self.mouse_to_grid(pg.mouse.get_pos()[0], pg.mouse.get_pos()[1], camera.scroll)
-                    if grid_pos == (x, y):
-                        iso_poly = self.world[x][y]["iso_poly"]
-                        iso_poly = [(px + self.grass_tiles.get_width() / 2 + camera.scroll.x,
-                                    py + camera.scroll.y + 0.5*TILE_SIZE) for px, py in iso_poly]
+                # Render text
+                font = pg.font.SysFont(None, 24)
+                cost_surface = font.render(cost_text, True, (255, 255, 255))
+                cost_rect = cost_surface.get_rect()
+                cost_rect.topleft = (mouse_pos[0] + 20, mouse_pos[1] + 20)
 
-                        # Create a transparent surface for the polygon
-                        polygon_surface = pg.Surface(screen.get_size(), pg.SRCALPHA)
-                        pg.draw.polygon(polygon_surface, (255, 0, 0, 128), iso_poly)  # Red with 50% transparency
-                        screen.blit(polygon_surface, (0, 0))
+                # Create background rect
+                bg_rect = cost_rect.copy()
+                bg_rect.inflate_ip(10, 10)  # Make background slightly larger than text
 
+                # Draw cost info
+                pg.draw.rect(screen, (0, 0, 0, 180), bg_rect)
+                screen.blit(cost_surface, cost_rect)
 
-        if self.temp_tile is not None:
-            iso_poly = self.temp_tile["iso_poly"]
-            iso_poly = [(x + self.grass_tiles.get_width()/2 + camera.scroll.x, y - (self.temp_tile["image"].get_height() - 2.5*TILE_SIZE) + camera.scroll.y) for x, y in iso_poly]
-            if self.temp_tile["buildable"]:
-                pg.draw.polygon(screen, (255, 255, 255), iso_poly, 3)
-            elif self.temp_tile["user_built"]:
-                pg.draw.polygon(screen, (0, 0, 255), iso_poly, 3)
-            else:
-                pg.draw.polygon(screen, (255, 0, 0), iso_poly, 3)
-            render_pos = self.temp_tile["render_pos"]
-            screen.blit(self.temp_tile["image"],
-                        (
-                            render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
-                            render_pos[1] - (self.temp_tile["image"].get_height() - 2 * TILE_SIZE) + camera.scroll.y)
-                        )
-            
-            # Get mouse position
-            mouse_pos = pg.mouse.get_pos()
+                # Draw description if available
+                if description_text:
+                    description_surface = font.render(description_text, True, (255, 255, 255))
+                    description_rect = description_surface.get_rect()
+                    description_rect.topleft = (mouse_pos[0] + 20, mouse_pos[1] + 50)
 
-            # Get the building cost
-            building_name = self.hud.selected_tile["name"]
-            cost_info = self.resource_manager.costs[building_name]
-
-            # Create cost text
-            cost_text = f"Cost: {cost_info['thugoleons']} thugoleons"
-
-            # Render text
-            font = pg.font.SysFont(None, 24)
-            text_surface = font.render(cost_text, True, (255, 255, 255))
-            text_rect = text_surface.get_rect()
-
-            # Position text near cursor (offset by 20 pixels)
-            text_rect.topleft = (mouse_pos[0] + 20, mouse_pos[1] + 20)
-            bg_rect = text_rect.copy()
-            bg_rect.inflate_ip(10, 10)  # Make background slightly larger than text
-            pg.draw.rect(screen, (0, 0, 0, 180), bg_rect)
-            screen.blit(text_surface, text_rect)
+                    bg_rect = description_rect.copy()
+                    bg_rect.inflate_ip(10, 10)  # Make background slightly larger than text
+                    pg.draw.rect(screen, (0, 0, 0, 180), bg_rect)
+                    screen.blit(description_surface, description_rect)
 
     def create_world(self):
         world = []
@@ -363,7 +416,7 @@ class World:
         }
 
         return out
-    
+
     def adjecent_roads(self, grid_pos):
         if self.hud.selected_tile["name"] == "road":
             return True
