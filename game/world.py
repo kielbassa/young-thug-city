@@ -1,7 +1,7 @@
 import pygame as pg
 import random
 import perlin_noise as noise
-from .settings import TILE_SIZE
+from .settings import TILE_SIZE, ELECTRICITY_MULTIPLIER, MOISTURE_MULTIPLIER
 from .buildings import Residential_Building, Factory, Solar_Panels, Water_Treatment_Plant
 from .roads import Road
 
@@ -168,9 +168,11 @@ class World:
                             self.buildings[grid_pos[0]][grid_pos[1]] = ent
                         case "solar_panels":
                             ent = Solar_Panels(render_pos, self.resource_manager)
+                            ent.electricity_production_rate = round(self.world[grid_pos[0]][grid_pos[1]]["elevation"]*ELECTRICITY_MULTIPLIER)
                             self.buildings[grid_pos[0]][grid_pos[1]] = ent
                         case "water_treatment_plant":
                             ent = Water_Treatment_Plant(render_pos, self.resource_manager)
+                            ent.water_production_rate = round(self.world[grid_pos[0]][grid_pos[1]]["moisture"]*MOISTURE_MULTIPLIER)
                             self.buildings[grid_pos[0]][grid_pos[1]] = ent
 
                     self.entities.append(ent)

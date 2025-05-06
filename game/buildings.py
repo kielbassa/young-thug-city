@@ -27,6 +27,9 @@ class Factory:
         self.electricity_consumption = 2
         self.water_consumption = 1
 
+        # Production rates per second
+        self.thugoleon_production_rate = 5
+
     def update(self):
         now = pg.time.get_ticks()
 
@@ -34,7 +37,7 @@ class Factory:
         if now - self.production_cooldown >= 1000:
             if (self.resource_manager.resources["electricity"] >= self.electricity_consumption and
                 self.resource_manager.resources["water"] >= self.water_consumption):
-                    self.resource_manager.resources["thugoleons"] += 5
+                    self.resource_manager.resources["thugoleons"] += self.thugoleon_production_rate
                     self.production_cooldown = now
 
         # Consumption of resources every second
@@ -64,6 +67,9 @@ class Residential_Building:
         self.electricity_consumption = 1
         self.water_consumption = 2
 
+        # Resource production rates per second
+        self.thugoleon_production_rate = 2
+
     def update(self):
         now = pg.time.get_ticks()
 
@@ -71,7 +77,7 @@ class Residential_Building:
         if now - self.production_cooldown >= 1000:
             if (self.resource_manager.resources["electricity"] >= self.electricity_consumption and
                 self.resource_manager.resources["water"] >= self.water_consumption):
-                    self.resource_manager.resources["thugoleons"] += 2
+                    self.resource_manager.resources["thugoleons"] += self.thugoleon_production_rate
                     self.production_cooldown = now
 
         # Consumption of resources every second
@@ -101,6 +107,9 @@ class Solar_Panels:
         self.water_consumption = 1
         self.thugoleon_consumption = 1
 
+        # Resource production rates per second
+        self.electricity_production_rate = 10
+
     def update(self):
         now = pg.time.get_ticks()
 
@@ -108,7 +117,7 @@ class Solar_Panels:
         if now - self.production_cooldown >= 1000:
             if (self.resource_manager.resources["water"] >= self.water_consumption
                 and self.resource_manager.resources["thugoleons"] >= self.thugoleon_consumption):
-                    self.resource_manager.resources["electricity"] += 10
+                    self.resource_manager.resources["electricity"] += self.electricity_production_rate
                     self.production_cooldown = now
 
         # Consumption of resources every second
@@ -137,6 +146,9 @@ class Water_Treatment_Plant:
         self.electricity_consumption = 1
         self.thugoleon_consumption = 1
 
+        # Resource production rates per second
+        self.water_production_rate = 10
+
     def update(self):
         now = pg.time.get_ticks()
 
@@ -144,7 +156,7 @@ class Water_Treatment_Plant:
         if now - self.production_cooldown >= 1000:
             if (self.resource_manager.resources["electricity"] >= self.electricity_consumption
                 and self.resource_manager.resources["thugoleons"] >= self.thugoleon_consumption):
-                    self.resource_manager.resources["water"] += 10
+                    self.resource_manager.resources["water"] += self.water_production_rate
                     self.production_cooldown = now
 
         # Consumption of resources every second

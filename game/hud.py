@@ -82,8 +82,6 @@ class Hud:
             render_pos[0] += image_scale.get_width() + 10
         return tiles
 
-
-
     def draw(self, screen):
         # resource
         screen.blit(self.resources_surface, (0,0))
@@ -98,8 +96,97 @@ class Hud:
             screen.blit(self.select_surface, (self.width * 0.35, self.height * 0.79))
             img = self.examined_tile.image.copy()
             img_scale = self.scale_image(img, h=h*0.7)
-            screen.blit(img_scale, (self.width * 0.35 + 10, self.height * 0.79 + 40))
-            draw_text(screen, self.examined_tile.name,40,(255,255,255),self.select_rect.topleft)
+            screen.blit(img_scale, (self.width * 0.35 + 10, self.height * 0.79 + 45))
+
+            # Add building name
+            draw_text(screen, self.examined_tile.name, 40, (255, 255, 255),
+                     (self.width * 0.35 + 10, self.height * 0.79 + 10))
+
+            # Display resource production/consumption information
+            font = pg.font.SysFont(None, 30)
+            resource_y = self.height * 0.79 + 45
+            resource_x = self.width * 0.5
+
+            # Consumption section header
+            consumption_header = font.render("Consumption:", True, (255, 180, 180))
+            screen.blit(consumption_header, (resource_x, resource_y))
+            resource_y += font.get_linesize()
+
+            # Check if the building has consumption attributes
+            if hasattr(self.examined_tile, 'electricity_consumption'):
+                consumption_text = f"Electricity: -{self.examined_tile.electricity_consumption}/s"
+                text_surface = font.render(consumption_text, True, (255, 100, 100))
+                screen.blit(text_surface, (resource_x, resource_y))
+                resource_y += font.get_linesize()
+
+            if hasattr(self.examined_tile, 'water_consumption'):
+                consumption_text = f"Water: -{self.examined_tile.water_consumption}/s"
+                text_surface = font.render(consumption_text, True, (255, 100, 100))
+                screen.blit(text_surface, (resource_x, resource_y))
+                resource_y += font.get_linesize()
+
+            if hasattr(self.examined_tile, 'thugoleon_consumption'):
+                consumption_text = f"Thugoleons: -{self.examined_tile.thugoleon_consumption}/s"
+                text_surface = font.render(consumption_text, True, (255, 100, 100))
+                screen.blit(text_surface, (resource_x, resource_y))
+                resource_y += font.get_linesize()
+
+            # Production section
+            resource_y += font.get_linesize()  # Add some spacing
+            production_header = font.render("Production:", True, (180, 255, 180))
+            screen.blit(production_header, (resource_x, resource_y))
+            resource_y += font.get_linesize()
+
+            # Production attributes
+            if hasattr(self.examined_tile, 'thugoleon_production_rate'):
+                production_text = f"Thugoleons: +{self.examined_tile.thugoleon_production_rate}/s"
+                text_surface = font.render(production_text, True, (100, 255, 100))
+                screen.blit(text_surface, (resource_x, resource_y))
+                resource_y += font.get_linesize()
+
+            if hasattr(self.examined_tile, 'electricity_production_rate'):
+                production_text = f"Electricity: +{self.examined_tile.electricity_production_rate}/s"
+                text_surface = font.render(production_text, True, (100, 255, 100))
+                screen.blit(text_surface, (resource_x, resource_y))
+                resource_y += font.get_linesize()
+
+            if hasattr(self.examined_tile, 'water_production_rate'):
+                production_text = f"Water: +{self.examined_tile.water_production_rate}/s"
+                text_surface = font.render(production_text, True, (100, 255, 100))
+                screen.blit(text_surface, (resource_x, resource_y))
+                resource_y += font.get_linesize()
+
+            # Add building description if available
+            if hasattr(self.world.building_attributes, 'description') and self.examined_tile.name in self.world.building_attributes.description:
+                description = self.world.building_attributes.description[self.examined_tile.name]
+                # Render description text with word wrapping to fit the panel
+                max_width = self.select_rect.width - 20  # Leave a margin
+
+                # Position for the description text (below the image)
+                desc_y = self.height * 0.79 + 40 + img_scale.get_height() + 10
+                desc_x = self.width * 0.35 + 10
+
+                # Simple word wrapping
+                words = description.split(' ')
+                line = ''
+                y_offset = 0
+
+                for word in words:
+                    test_line = line + word + ' '
+                    test_width = font.size(test_line)[0]
+
+                    if test_width > max_width:
+                        text_surface = font.render(line, True, (255, 255, 255))
+                        screen.blit(text_surface, (desc_x, desc_y + y_offset))
+                        y_offset += font.get_linesize()
+                        line = word + ' '
+                    else:
+                        line = test_line
+
+                # Render the last line
+                if line:
+                    text_surface = font.render(line, True, (255, 255, 255))
+                    screen.blit(text_surface, (desc_x, desc_y + y_offset))
 
         for tile in self.tiles:
             icon = tile["icon"].copy()
