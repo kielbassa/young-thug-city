@@ -16,6 +16,9 @@ class Hud:
         self.resources_surface = pg.Surface((width, height*0.02), pg.SRCALPHA)
         self.resources_rect = self.resources_surface.get_rect(topleft=(0,0))
         self.resources_surface.fill(self.hud_color)
+        
+        # For tracking changes to examined_tile for caching
+        self.prev_examined_tile_attr = {}
 
         # Variables to control building HUD size and position
         self.building_hud_width = width * 0.25  # 25% of the screen width
@@ -32,6 +35,15 @@ class Hud:
         self.select_surface = pg.Surface((width * 0.3, height* 0.25), pg.SRCALPHA)
         self.select_rect = self.select_surface.get_rect(topleft=(self.width * 0.35, self.height*0.8))
         self.select_surface.fill(self.hud_color)
+        
+        # Caching variables for select hud
+        self.select_cache_valid = False
+        self.cached_select_surface = pg.Surface((width * 0.3, height* 0.25), pg.SRCALPHA)
+        self.last_examined_tile = None
+        
+        # Caching statistics for performance tracking
+        self.cache_hits = 0
+        self.cache_misses = 0
 
         self.images = self.load_images()
         self.tiles = self.create_build_hud()
@@ -55,6 +67,23 @@ class Hud:
 
         if mouse_action[2]:
             self.selected_tile = None
+
+        # Invalidate the select HUD cache if the examined tile has changed
+        if self.examined_tile != self.last_examined_tile:
+            self.select_cache_valid = False
+            self.last_examined_tile = self.examined_tile
+            
+            # Store current attribute values for deeper comparison
+            if self.examined_tile is not None:
+                self.prev_examined_tile_attr = {
+                    'name': getattr(self.examined_tile, 'name', None),
+                    'electricity_consumption': getattr(self.examined_tile, 'electricity_consumption', None),
+                    'water_consumption': getattr(self.examined_tile, 'water_consumption', None),
+                    'thugoleon_consumption': getattr(self.examined_tile, 'thugoleon_consumption', None),
+                    'electricity_production_rate': getattr(self.examined_tile, 'electricity_production_rate', None),
+                    'water_production_rate': getattr(self.examined_tile, 'water_production_rate', None),
+                    'thugoleon_production_rate': getattr(self.examined_tile, 'thugoleon_production_rate', None)
+                }
 
         for tile in self.tiles:
             if self.resource_manager.is_affordable(tile["name"]):
@@ -92,6 +121,12 @@ class Hud:
     def draw(self, screen):
         # resource
         screen.blit(self.resources_surface, (0, 0))
+        
+        # Display cache efficiency stats 
+        cache_total = self.cache_hits + self.cache_misses
+        if cache_total > 0:
+            efficiency = (self.cache_hits / cache_total) * 100
+            draw_text(screen, f"Cache: {efficiency:.1f}% ({self.cache_hits}/{cache_total})", 20, (0, 255, 0), (15, 35))
 
         # build hud
         screen.blit(self.build_surface, (self.building_hud_x, self.building_hud_y))
@@ -145,61 +180,86 @@ class Hud:
             draw_text(screen, "Delete mode active, press the key again to deactivate", 60, (255, 0, 0),
                       (self.width * 0.02, self.height * 0.95))
     def draw_select_hud(self, screen):
+        # Use cached surface if valid
+        if self.select_cache_valid and self.examined_tile == self.last_examined_tile:
+            # Do deeper attribute comparison to ensure nothing changed
+            if self.examined_tile is not None:
+                current_attrs = {
+                    'name': getattr(self.examined_tile, 'name', None),
+                    'electricity_consumption': getattr(self.examined_tile, 'electricity_consumption', None),
+                    'water_consumption': getattr(self.examined_tile, 'water_consumption', None),
+                    'thugoleon_consumption': getattr(self.examined_tile, 'thugoleon_consumption', None),
+                    'electricity_production_rate': getattr(self.examined_tile, 'electricity_production_rate', None),
+                    'water_production_rate': getattr(self.examined_tile, 'water_production_rate', None),
+                    'thugoleon_production_rate': getattr(self.examined_tile, 'thugoleon_production_rate', None)
+                }
+                if current_attrs != self.prev_examined_tile_attr:
+                    self.select_cache_valid = False
+                    self.prev_examined_tile_attr = current_attrs
+            
+            if self.select_cache_valid:
+                self.cache_hits += 1
+                screen.blit(self.cached_select_surface, (self.width * 0.35, self.height * 0.74))
+                return
+            
+        # If cache is invalid, render to cached surface
+        self.cache_misses += 1
+        self.cached_select_surface.fill(self.hud_color)
         w, h = self.select_rect.width, self.select_rect.height
-        screen.blit(self.select_surface, (self.width * 0.35, self.height * 0.74))
+        
         img = self.examined_tile.image.copy()
         img_scale = self.scale_image(img, h=h * 0.7)
-        screen.blit(img_scale, (self.width * 0.35 + 85, self.height * 0.79 + 45))
+        self.cached_select_surface.blit(img_scale, (85, h * 0.05 + 45))
 
         # Add building name
-        draw_text(screen, self.examined_tile.name.replace('_', ' ').title(), 40, (255, 255, 255),
-                (self.width * 0.35 + 10, self.height * 0.74 + 10))
+        draw_text(self.cached_select_surface, self.examined_tile.name.replace('_', ' ').title(), 40, (255, 255, 255),
+                (10, 10))
 
         # Display resource production/consumption information
         text_size = 28
         description_text_size = 25
-        resource_y = self.height * 0.79 + 50
-        resource_x = self.width * 0.5 + 100
+        resource_y = h * 0.05 + 50
+        resource_x = w * 0.5 + 50
 
         # Consumption section header
-        draw_text(screen, "Consumption:", text_size, (255, 180, 180), (resource_x, resource_y))
+        draw_text(self.cached_select_surface, "Consumption:", text_size, (255, 180, 180), (resource_x, resource_y))
         resource_y += text_size
 
         # Check if the building has consumption attributes
         if hasattr(self.examined_tile, 'electricity_consumption'):
             consumption_text = f"Electricity: -{self.examined_tile.electricity_consumption}/s"
-            draw_text(screen, consumption_text, text_size, (255, 100, 100), (resource_x, resource_y))
+            draw_text(self.cached_select_surface, consumption_text, text_size, (255, 100, 100), (resource_x, resource_y))
             resource_y += text_size
 
         if hasattr(self.examined_tile, 'water_consumption'):
             consumption_text = f"Water: -{self.examined_tile.water_consumption}/s"
-            draw_text(screen, consumption_text, text_size, (255, 100, 100), (resource_x, resource_y))
+            draw_text(self.cached_select_surface, consumption_text, text_size, (255, 100, 100), (resource_x, resource_y))
             resource_y += text_size
 
         if hasattr(self.examined_tile, 'thugoleon_consumption'):
             consumption_text = f"Thugoleons: -{self.examined_tile.thugoleon_consumption}/s"
-            draw_text(screen, consumption_text, text_size, (255, 100, 100), (resource_x, resource_y))
+            draw_text(self.cached_select_surface, consumption_text, text_size, (255, 100, 100), (resource_x, resource_y))
             resource_y += text_size
 
         # Production section
         resource_y += text_size  # Add some spacing
-        draw_text(screen, "Production:", text_size, (180, 255, 180), (resource_x, resource_y))
+        draw_text(self.cached_select_surface, "Production:", text_size, (180, 255, 180), (resource_x, resource_y))
         resource_y += text_size
 
         # Production attributes
         if hasattr(self.examined_tile, 'thugoleon_production_rate'):
             production_text = f"Thugoleons: +{self.examined_tile.thugoleon_production_rate}/s"
-            draw_text(screen, production_text, text_size, (100, 255, 100), (resource_x, resource_y))
+            draw_text(self.cached_select_surface, production_text, text_size, (100, 255, 100), (resource_x, resource_y))
             resource_y += text_size
 
         if hasattr(self.examined_tile, 'electricity_production_rate'):
             production_text = f"Electricity: +{self.examined_tile.electricity_production_rate}/s"
-            draw_text(screen, production_text, text_size, (100, 255, 100), (resource_x, resource_y))
+            draw_text(self.cached_select_surface, production_text, text_size, (100, 255, 100), (resource_x, resource_y))
             resource_y += text_size
 
         if hasattr(self.examined_tile, 'water_production_rate'):
             production_text = f"Water: +{self.examined_tile.water_production_rate}/s"
-            draw_text(screen, production_text, text_size, (100, 255, 100), (resource_x, resource_y))
+            draw_text(self.cached_select_surface, production_text, text_size, (100, 255, 100), (resource_x, resource_y))
             resource_y += text_size
 
         # Add building description if available
@@ -209,8 +269,8 @@ class Hud:
             max_width = self.select_rect.width - 20  # Leave a margin
 
             # Position for the description text (below the image)
-            desc_y = self.height * 0.74 + 40
-            desc_x = self.width * 0.35 + 10
+            desc_y = 40
+            desc_x = 10
 
             # Simple word wrapping
             words = description.split(' ')
@@ -222,7 +282,7 @@ class Hud:
                 test_width = pg.font.SysFont(None, text_size).size(test_line)[0]
 
                 if test_width > max_width:
-                    draw_text(screen, line, description_text_size, (255, 255, 255), (desc_x, desc_y + y_offset))
+                    draw_text(self.cached_select_surface, line, description_text_size, (255, 255, 255), (desc_x, desc_y + y_offset))
                     y_offset += text_size
                     line = word + ' '
                 else:
@@ -230,7 +290,11 @@ class Hud:
 
             # Render the last line
             if line:
-                draw_text(screen, line, text_size, (255, 255, 255), (desc_x, desc_y + y_offset))
+                draw_text(self.cached_select_surface, line, text_size, (255, 255, 255), (desc_x, desc_y + y_offset))
+                
+        # Mark cache as valid and display it
+        self.select_cache_valid = True
+        screen.blit(self.cached_select_surface, (self.width * 0.35, self.height * 0.74))
 
     def draw_building_info(self, screen):
         # Get mouse position
