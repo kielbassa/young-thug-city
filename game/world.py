@@ -157,9 +157,9 @@ class World:
                     ent = None
                     match self.hud.selected_tile["name"]:
                         case "road":
-                            ent = Road(render_pos)
-                            road = Road(self.world[grid_pos[0]][grid_pos[1]]["render_pos"])
-                            self.roads[grid_pos[0]][grid_pos[1]] = road
+                            # Create road instance with resource_manager
+                            ent = Road(self.world[grid_pos[0]][grid_pos[1]]["render_pos"], self.resource_manager)
+                            self.roads[grid_pos[0]][grid_pos[1]] = ent
                             self.update_road_textures(grid_pos)
                         case "factory":
                             ent = Factory(render_pos, self.resource_manager)
@@ -208,6 +208,8 @@ class World:
                 if road is not None:
                     # Remove road
                     self.click_sound.play()
+                    if road in self.entities:
+                        self.entities.remove(road)
                     self.roads[grid_pos[0]][grid_pos[1]] = None
                 self.world[grid_pos[0]][grid_pos[1]]["buildable"] = True
                 self.world[grid_pos[0]][grid_pos[1]]["empty"] = True

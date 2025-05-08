@@ -10,17 +10,17 @@ class ResourceManager:
         self.resources = {
             "electricity": 100,
             "water": 100,
-            "thugoleons": 1000,
+            "thugoleons": 1000000,
             "citizens": 0
         }
 
         # costs
         self.costs = {
-            "factory": {"thugoleons": 10},
-            "residential_building": {"thugoleons": 5, "citizens": -2},
-            "solar_panels": {"thugoleons": 100},
-            "water_treatment_plant": {"thugoleons": 100},
-            "road": {"thugoleons": 1}
+            "factory": {"thugoleons": 10000},
+            "residential_building": {"thugoleons": 5000, "citizens": -2},
+            "solar_panels": {"thugoleons": 180000},
+            "water_treatment_plant": {"thugoleons": 220000},
+            "road": {"thugoleons": 1000}
         }
 
     def apply_cost_to_resource(self, building):

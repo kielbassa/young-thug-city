@@ -20,20 +20,20 @@ class Buildings:
             },
             "solar_panels": {
                 "water": 1,
-                "thugoleons": 1,
+                "thugoleons": 800,
             },
             "water_treatment_plant": {
                 "electricity": 1,
-                "thugoleons": 1,
+                "thugoleons": 1000,
             },
         }
 
         self.production = {
             "factory": {
-                "thugoleons": 5,
+                "thugoleons": 5000,
             },
             "residential_building": {
-                "thugoleons": 2,
+                "thugoleons": 2500,
             },
 
         }

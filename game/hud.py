@@ -307,7 +307,7 @@ class Hud:
         # Access building description
         if building_name == "road":
             from .roads import Road
-            road_attributes = Road(None)
+            road_attributes = Road(None, None)  # Pass None for resource_manager too
             description_text = f"Description: {road_attributes.description}"
         else:
             # For other buildings, get the description from the Buildings class
