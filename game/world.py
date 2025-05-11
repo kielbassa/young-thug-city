@@ -162,20 +162,20 @@ class World:
                             self.roads[grid_pos[0]][grid_pos[1]] = ent
                             self.update_road_textures(grid_pos)
                         case "factory":
-                            ent = Factory(render_pos, self.resource_manager)
+                            ent = Factory(render_pos, self.resource_manager, self, grid_pos)
                             self.buildings[grid_pos[0]][grid_pos[1]] = ent
                         case "residential_building":
-                            ent = Residential_Building(render_pos, self.resource_manager)
+                            ent = Residential_Building(render_pos, self.resource_manager, self, grid_pos)
                             self.buildings[grid_pos[0]][grid_pos[1]] = ent
                         case "solar_panels":
-                            ent = Solar_Panels(render_pos, self.resource_manager)
+                            ent = Solar_Panels(render_pos, self.resource_manager, self, grid_pos)
                             electricity_production_rate = round(self.world[grid_pos[0]][grid_pos[1]]["elevation"]*ELECTRICITY_MULTIPLIER)
                             water_consumption_rate = round(ent.water_consumption + electricity_production_rate*0.15)
                             ent.electricity_production_rate = electricity_production_rate
                             ent.water_consumption = water_consumption_rate
                             self.buildings[grid_pos[0]][grid_pos[1]] = ent
                         case "water_treatment_plant":
-                            ent = Water_Treatment_Plant(render_pos, self.resource_manager)
+                            ent = Water_Treatment_Plant(render_pos, self.resource_manager, self, grid_pos)
                             water_production_rate = round(self.world[grid_pos[0]][grid_pos[1]]["moisture"]*MOISTURE_MULTIPLIER)
                             electricity_consumption_rate = round(ent.electricity_consumption + water_production_rate*0.3)
                             ent.water_production_rate = water_production_rate
@@ -270,11 +270,11 @@ class World:
                                 pg.draw.polygon(screen, (255, 255, 255), mask, 3)
 
                     # draw citizens
-                    # citizen = self.citizens[x][y]
-                    # if citizen is not None:
-                    #     screen.blit(citizen.image,
-                    #                 (citizen.current_pos.x + self.grass_tiles.get_width()/2 + camera.scroll.x,
-                    #                  citizen.current_pos.y - (citizen.image.get_height() - 1.5*TILE_SIZE) + camera.scroll.y))
+                    citizen = self.citizens[x][y]
+                    if citizen is not None:
+                        screen.blit(citizen.image,
+                                    (citizen.current_pos.x + self.grass_tiles.get_width()/2 + camera.scroll.x,
+                                     citizen.current_pos.y - (citizen.image.get_height() - 1.5*TILE_SIZE) + camera.scroll.y))
 
                     # Draw red polygon around the tile in delete mode
                     if self.hud.delete_mode:

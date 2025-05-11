@@ -39,14 +39,14 @@ class Buildings:
         }
 
 class Factory:
-    def __init__(self, pos, resource_manager):
+    def __init__(self, pos, resource_manager, world=None, grid_pos=None):
         image = pg.image.load("assets/graphics/factory.png")
         self.image = image
         self.name = "factory"
         self.rect = self.image.get_rect(topleft=pos)
         self.resource_manager = resource_manager
         self.resource_manager.apply_cost_to_resource(self.name)
-
+        
         # Cooldowns for resource generation and consumption
         self.production_cooldown = pg.time.get_ticks()
         self.consumption_cooldown = pg.time.get_ticks()
@@ -57,6 +57,32 @@ class Factory:
 
         # Production rates per second
         self.thugoleon_production_rate = 5
+        
+        # Store adjacent road position
+        self.adjacent_road = None
+        if world and grid_pos:
+            self.find_adjacent_road(world, grid_pos)
+            # Spawn a citizen on the adjacent road
+            if self.adjacent_road:
+                from .citizens import Citizen
+                road_tile = world.world[self.adjacent_road[0]][self.adjacent_road[1]]
+                Citizen(road_tile, world)
+                
+    def find_adjacent_road(self, world, grid_pos):
+        """Find an adjacent road to the building and store its position"""
+        x, y = grid_pos
+        # Check for adjacent roads
+        adjacent_positions = [
+            (x - 1, y),  # Left
+            (x + 1, y),  # Right
+            (x, y - 1),  # Top
+            (x, y + 1)   # Bottom
+        ]
+        for nx, ny in adjacent_positions:
+            if 0 <= nx < world.grid_length_x and 0 <= ny < world.grid_length_y:
+                if world.roads[nx][ny] is not None:
+                    self.adjacent_road = (nx, ny)
+                    return
 
     def update(self):
         now = pg.time.get_ticks()
@@ -79,7 +105,7 @@ class Factory:
                 self.consumption_cooldown = now
 
 class Residential_Building:
-    def __init__(self, pos, resource_manager):
+    def __init__(self, pos, resource_manager, world=None, grid_pos=None):
         image = pg.image.load("assets/graphics/residential_building.png")
         self.image = image
         self.name = "residential_building"
@@ -97,6 +123,32 @@ class Residential_Building:
 
         # Resource production rates per second
         self.thugoleon_production_rate = 2
+
+        # Store adjacent road position
+        self.adjacent_road = None
+        if world and grid_pos:
+            self.find_adjacent_road(world, grid_pos)
+            # Spawn a citizen on the adjacent road
+            if self.adjacent_road:
+                from .citizens import Citizen
+                road_tile = world.world[self.adjacent_road[0]][self.adjacent_road[1]]
+                Citizen(road_tile, world)
+                
+    def find_adjacent_road(self, world, grid_pos):
+        """Find an adjacent road to the building and store its position"""
+        x, y = grid_pos
+        # Check for adjacent roads
+        adjacent_positions = [
+            (x - 1, y),  # Left
+            (x + 1, y),  # Right
+            (x, y - 1),  # Top
+            (x, y + 1)   # Bottom
+        ]
+        for nx, ny in adjacent_positions:
+            if 0 <= nx < world.grid_length_x and 0 <= ny < world.grid_length_y:
+                if world.roads[nx][ny] is not None:
+                    self.adjacent_road = (nx, ny)
+                    return
 
     def update(self):
         now = pg.time.get_ticks()
@@ -119,7 +171,7 @@ class Residential_Building:
                 self.consumption_cooldown = now
 
 class Solar_Panels:
-    def __init__(self, pos, resource_manager):
+    def __init__(self, pos, resource_manager, world=None, grid_pos=None):
         image = pg.image.load("assets/graphics/solar_panels.png")
         self.image = image
         self.name = "solar_panels"
@@ -137,6 +189,32 @@ class Solar_Panels:
 
         # Resource production rates per second
         self.electricity_production_rate = 10
+
+        # Store adjacent road position
+        self.adjacent_road = None
+        if world and grid_pos:
+            self.find_adjacent_road(world, grid_pos)
+            # Spawn a citizen on the adjacent road
+            if self.adjacent_road:
+                from .citizens import Citizen
+                road_tile = world.world[self.adjacent_road[0]][self.adjacent_road[1]]
+                Citizen(road_tile, world)
+                
+    def find_adjacent_road(self, world, grid_pos):
+        """Find an adjacent road to the building and store its position"""
+        x, y = grid_pos
+        # Check for adjacent roads
+        adjacent_positions = [
+            (x - 1, y),  # Left
+            (x + 1, y),  # Right
+            (x, y - 1),  # Top
+            (x, y + 1)   # Bottom
+        ]
+        for nx, ny in adjacent_positions:
+            if 0 <= nx < world.grid_length_x and 0 <= ny < world.grid_length_y:
+                if world.roads[nx][ny] is not None:
+                    self.adjacent_road = (nx, ny)
+                    return
 
     def update(self):
         now = pg.time.get_ticks()
@@ -158,7 +236,7 @@ class Solar_Panels:
                 self.consumption_cooldown = now
 
 class Water_Treatment_Plant:
-    def __init__(self, pos, resource_manager):
+    def __init__(self, pos, resource_manager, world=None, grid_pos=None):
         image = pg.image.load("assets/graphics/water_treatment_plant.png")
         self.image = image
         self.name = "water_treatment_plant"
@@ -176,6 +254,32 @@ class Water_Treatment_Plant:
 
         # Resource production rates per second
         self.water_production_rate = 10
+
+        # Store adjacent road position
+        self.adjacent_road = None
+        if world and grid_pos:
+            self.find_adjacent_road(world, grid_pos)
+            # Spawn a citizen on the adjacent road
+            if self.adjacent_road:
+                from .citizens import Citizen
+                road_tile = world.world[self.adjacent_road[0]][self.adjacent_road[1]]
+                Citizen(road_tile, world)
+                
+    def find_adjacent_road(self, world, grid_pos):
+        """Find an adjacent road to the building and store its position"""
+        x, y = grid_pos
+        # Check for adjacent roads
+        adjacent_positions = [
+            (x - 1, y),  # Left
+            (x + 1, y),  # Right
+            (x, y - 1),  # Top
+            (x, y + 1)   # Bottom
+        ]
+        for nx, ny in adjacent_positions:
+            if 0 <= nx < world.grid_length_x and 0 <= ny < world.grid_length_y:
+                if world.roads[nx][ny] is not None:
+                    self.adjacent_road = (nx, ny)
+                    return
 
     def update(self):
         now = pg.time.get_ticks()

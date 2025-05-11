@@ -5,7 +5,6 @@ from pathfinding.core.grid import Grid
 from pathfinding.finder.a_star import AStarFinder
 
 class Citizen:
-
     def __init__(self, tile, world):
             self.world = world
             self.world.entities.append(self)

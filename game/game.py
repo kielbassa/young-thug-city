@@ -30,15 +30,6 @@ class Game:
 
         # world
         self.world = World(self.buildings, self.resource_manager, self.entities, self.hud, self.clock, WORLD_SIZE, WORLD_SIZE, self.width, self.height)
-        # citizens
-        for _ in range(10):
-            # Find a random walkable tile
-            while True:
-                x = random.randint(0, WORLD_SIZE-2)
-                y = random.randint(0, WORLD_SIZE-2)
-                if self.world.world[x][y]["walkable"]:
-                    Citizen(self.world.world[x][y], self.world)
-                    break
 
         # camera
         self.camera = Camera(self.width, self.height, self.hud)
