@@ -23,6 +23,9 @@ class Citizen:
             self.target_pos = pg.Vector2(tile["render_pos"][0], tile["render_pos"][1])
             self.is_moving = False
 
+            # Initialize a placeholder grid for the initial path creation
+            self.grid = Grid(matrix=self.world.collision_matrix)
+
             self.create_path()
 
     def create_path(self):
@@ -30,39 +33,55 @@ class Citizen:
         attempts = 0
 
         while attempts < max_attempts:
-            x = random.randint(0, self.world.grid_length_x - 1)
-            y = random.randint(0, self.world.grid_length_y - 1)
-            dest_tile = self.world.world[x][y]
+            # Instead of random destination, find road tiles
+            road_tiles = []
+            for i in range(self.world.grid_length_x):
+                for j in range(self.world.grid_length_y):
+                    # Check if tile has a road on it and is not occupied by another citizen
+                    if self.world.roads[i][j] is not None and self.world.citizens[i][j] is None:
+                        road_tiles.append((i, j))
 
-            # Check if destination is walkable and not occupied by another citizen
-            if dest_tile["walkable"] and self.world.citizens[x][y] is None:
-                # Create temporary collision matrix that includes other citizens
-                temp_collision_matrix = [row[:] for row in self.world.collision_matrix]
+            # If no road tiles are available, stay in place
+            if not road_tiles:
+                break
 
-                # Mark positions of all citizens as non-walkable
-                for i in range(self.world.grid_length_x):
-                    for j in range(self.world.grid_length_y):
-                        if self.world.citizens[i][j] is not None:
-                            temp_collision_matrix[j][i] = 0
+            # Choose a random road tile as destination
+            x, y = random.choice(road_tiles)
 
-                # Exception for current citizen's position
-                current_pos = self.tile["grid"]
-                temp_collision_matrix[current_pos[1]][current_pos[0]] = 1
+            # Create temporary collision matrix that includes other citizens
+            temp_collision_matrix = [row[:] for row in self.world.collision_matrix]
 
-                self.grid = Grid(matrix=temp_collision_matrix)
-                self.start = self.grid.node(self.tile["grid"][0], self.tile["grid"][1])
-                self.end = self.grid.node(x, y)
-                finder = AStarFinder(diagonal_movement=DiagonalMovement.never)
-                path, runs = finder.find_path(self.start, self.end, self.grid)
+            # Mark positions of all citizens as non-walkable
+            for i in range(self.world.grid_length_x):
+                for j in range(self.world.grid_length_y):
+                    if self.world.citizens[i][j] is not None:
+                        temp_collision_matrix[j][i] = 0
 
-                if len(path) > 0:
-                    self.path_index = 0
-                    self.path = path
-                    return
+            # Mark all non-road tiles as unwalkable
+            for i in range(self.world.grid_length_x):
+                for j in range(self.world.grid_length_y):
+                    if self.world.roads[i][j] is None:
+                        temp_collision_matrix[j][i] = 0
+
+            # Exception for current citizen's position
+            current_pos = self.tile["grid"]
+            temp_collision_matrix[current_pos[1]][current_pos[0]] = 1
+
+            self.grid = Grid(matrix=temp_collision_matrix)
+            self.start = self.grid.node(self.tile["grid"][0], self.tile["grid"][1])
+            self.end = self.grid.node(x, y)
+            finder = AStarFinder(diagonal_movement=DiagonalMovement.never)
+            path, runs = finder.find_path(self.start, self.end, self.grid)
+
+            if len(path) > 0:
+                self.path_index = 0
+                self.path = path
+                return
 
             attempts += 1
 
         # If no path is found after max attempts, stay in place
+        self.grid = Grid(matrix=self.world.collision_matrix)
         self.path = [self.grid.node(self.tile["grid"][0], self.tile["grid"][1])]
         self.path_index = 0
 
@@ -70,14 +89,15 @@ class Citizen:
         # Remove citizen from current tile
         self.world.citizens[self.tile["grid"][0]][self.tile["grid"][1]] = None
 
-        # Only move if the new tile is not occupied
-        if self.world.citizens[new_tile[0]][new_tile[1]] is None:
+        # Only move if the new tile is not occupied and has a road
+        if (self.world.citizens[new_tile[0]][new_tile[1]] is None and
+            self.world.roads[new_tile[0]][new_tile[1]] is not None):
             self.world.citizens[new_tile[0]][new_tile[1]] = self
             self.tile = self.world.world[new_tile[0]][new_tile[1]]
             self.target_pos = pg.Vector2(self.tile["render_pos"][0], self.tile["render_pos"][1])
             self.is_moving = True
         else:
-            # If tile is occupied, stay in current tile
+            # If tile is occupied or has no road, stay in current tile
             self.world.citizens[self.tile["grid"][0]][self.tile["grid"][1]] = self
             self.create_path()  # Find a new path
 
@@ -100,8 +120,8 @@ class Citizen:
                 node = self.path[self.path_index]
                 new_pos = [node.x, node.y]
 
-                # Only move if the destination is walkable
-                if self.world.world[new_pos[0]][new_pos[1]]["walkable"]:
+                # Only move if the destination has a road
+                if self.world.roads[new_pos[0]][new_pos[1]] is not None:
                     self.change_tile(new_pos)
                     self.path_index += 1
 
@@ -109,7 +129,7 @@ class Citizen:
                     if self.path_index >= len(self.path):
                         self.create_path()
                 else:
-                    # If destination is no longer walkable, find new path
+                    # If destination has no road, find new path
                     self.create_path()
 
                 self.move_timer = now
