@@ -38,7 +38,23 @@ class Buildings:
 
         }
 
-class Factory:
+    def find_adjacent_road(self, world, grid_pos):
+        """Find an adjacent road to the building and store its position"""
+        x, y = grid_pos
+        # Check for adjacent roads
+        adjacent_positions = [
+            (x - 1, y),  # Left
+            (x + 1, y),  # Right
+            (x, y - 1),  # Top
+            (x, y + 1)   # Bottom
+        ]
+        for nx, ny in adjacent_positions:
+            if 0 <= nx < world.grid_length_x and 0 <= ny < world.grid_length_y:
+                if world.roads[nx][ny] is not None:
+                    self.adjacent_road = (nx, ny)
+                    return
+
+class Factory(Buildings):
     def __init__(self, pos, resource_manager, world=None, grid_pos=None):
         image = pg.image.load("assets/graphics/factory.png")
         self.image = image
@@ -63,7 +79,6 @@ class Factory:
         if world and grid_pos:
             self.find_adjacent_road(world, grid_pos)
 
-
     def update(self):
         now = pg.time.get_ticks()
 
@@ -84,23 +99,7 @@ class Factory:
                 self.resource_manager.resources["water"] -= self.water_consumption
                 self.consumption_cooldown = now
 
-    def find_adjacent_road(self, world, grid_pos):
-        """Find an adjacent road to the building and store its position"""
-        x, y = grid_pos
-        # Check for adjacent roads
-        adjacent_positions = [
-            (x - 1, y),  # Left
-            (x + 1, y),  # Right
-            (x, y - 1),  # Top
-            (x, y + 1)   # Bottom
-        ]
-        for nx, ny in adjacent_positions:
-            if 0 <= nx < world.grid_length_x and 0 <= ny < world.grid_length_y:
-                if world.roads[nx][ny] is not None:
-                    self.adjacent_road = (nx, ny)
-                    return
-
-class Residential_Building:
+class Residential_Building(Buildings):
     def __init__(self, pos, resource_manager, world=None, grid_pos=None):
         image = pg.image.load("assets/graphics/residential_building.png")
         self.image = image
@@ -150,23 +149,8 @@ class Residential_Building:
                 self.resource_manager.resources["water"] -= self.water_consumption
                 self.consumption_cooldown = now
 
-    def find_adjacent_road(self, world, grid_pos):
-        """Find an adjacent road to the building and store its position"""
-        x, y = grid_pos
-        # Check for adjacent roads
-        adjacent_positions = [
-            (x - 1, y),  # Left
-            (x + 1, y),  # Right
-            (x, y - 1),  # Top
-            (x, y + 1)   # Bottom
-        ]
-        for nx, ny in adjacent_positions:
-            if 0 <= nx < world.grid_length_x and 0 <= ny < world.grid_length_y:
-                if world.roads[nx][ny] is not None:
-                    self.adjacent_road = (nx, ny)
-                    return
 
-class Solar_Panels:
+class Solar_Panels(Buildings):
     def __init__(self, pos, resource_manager, world=None, grid_pos=None):
         image = pg.image.load("assets/graphics/solar_panels.png")
         self.image = image
@@ -210,23 +194,7 @@ class Solar_Panels:
                 self.resource_manager.resources["thugoleons"] -= self.thugoleon_consumption
                 self.consumption_cooldown = now
 
-    def find_adjacent_road(self, world, grid_pos):
-        """Find an adjacent road to the building and store its position"""
-        x, y = grid_pos
-        # Check for adjacent roads
-        adjacent_positions = [
-            (x - 1, y),  # Left
-            (x + 1, y),  # Right
-            (x, y - 1),  # Top
-            (x, y + 1)   # Bottom
-        ]
-        for nx, ny in adjacent_positions:
-            if 0 <= nx < world.grid_length_x and 0 <= ny < world.grid_length_y:
-                if world.roads[nx][ny] is not None:
-                    self.adjacent_road = (nx, ny)
-                    return
-
-class Water_Treatment_Plant:
+class Water_Treatment_Plant(Buildings):
     def __init__(self, pos, resource_manager, world=None, grid_pos=None):
         image = pg.image.load("assets/graphics/water_treatment_plant.png")
         self.image = image
@@ -269,19 +237,3 @@ class Water_Treatment_Plant:
                 self.resource_manager.resources["electricity"] -= self.electricity_consumption
                 self.resource_manager.resources["thugoleons"] -= self.thugoleon_consumption
                 self.consumption_cooldown = now
-
-    def find_adjacent_road(self, world, grid_pos):
-        """Find an adjacent road to the building and store its position"""
-        x, y = grid_pos
-        # Check for adjacent roads
-        adjacent_positions = [
-            (x - 1, y),  # Left
-            (x + 1, y),  # Right
-            (x, y - 1),  # Top
-            (x, y + 1)   # Bottom
-        ]
-        for nx, ny in adjacent_positions:
-            if 0 <= nx < world.grid_length_x and 0 <= ny < world.grid_length_y:
-                if world.roads[nx][ny] is not None:
-                    self.adjacent_road = (nx, ny)
-                    return
