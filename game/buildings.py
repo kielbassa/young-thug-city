@@ -2,6 +2,7 @@ import pygame as pg
 
 class Buildings:
     def __init__(self):
+        # these attributes are available to all buildings
         self.description = {
             "factory": "A factory that employs citizens and produces thugoleons.",
             "residential_building": "A residential building that provides housing for citizens.",
@@ -35,7 +36,12 @@ class Buildings:
             "residential_building": {
                 "thugoleons": 2500,
             },
-
+            "solar_panels": {
+                "electricity": 10,
+            },
+            "water_treatment_plant": {
+                "water": 10,
+            },
         }
 
     def find_adjacent_road(self, world, grid_pos):
@@ -57,6 +63,7 @@ class Buildings:
 class Factory(Buildings):
     def __init__(self, pos, resource_manager, world=None, grid_pos=None):
         image = pg.image.load("assets/graphics/factory.png")
+        resources = Buildings()
         self.image = image
         self.name = "factory"
         self.rect = self.image.get_rect(topleft=pos)
@@ -68,11 +75,11 @@ class Factory(Buildings):
         self.consumption_cooldown = pg.time.get_ticks()
 
         # Resource consumption rates per second
-        self.electricity_consumption = 2
-        self.water_consumption = 1
+        self.electricity_consumption = resources.consumption["factory"]["electricity"]
+        self.water_consumption = resources.consumption["factory"]["water"]
 
         # Production rates per second
-        self.thugoleon_production_rate = 5
+        self.thugoleon_production_rate = resources.production["factory"]["thugoleons"]
 
         # Store adjacent road position
         self.adjacent_road = None
@@ -103,6 +110,7 @@ class Residential_Building(Buildings):
     def __init__(self, pos, resource_manager, world=None, grid_pos=None):
         image = pg.image.load("assets/graphics/residential_building.png")
         self.image = image
+        resources = Buildings()
         self.name = "residential_building"
         self.rect = self.image.get_rect(topleft=pos)
         self.resource_manager = resource_manager
@@ -113,11 +121,11 @@ class Residential_Building(Buildings):
         self.consumption_cooldown = pg.time.get_ticks()
 
         # Resource consumption rates per second
-        self.electricity_consumption = 1
-        self.water_consumption = 2
+        self.electricity_consumption = resources.consumption["residential_building"]["electricity"]
+        self.water_consumption = resources.consumption["residential_building"]["water"]
 
         # Resource production rates per second
-        self.thugoleon_production_rate = 2
+        self.thugoleon_production_rate = resources.production["residential_building"]["thugoleons"]
 
         # Store adjacent road position
         self.adjacent_road = None
@@ -154,6 +162,7 @@ class Solar_Panels(Buildings):
     def __init__(self, pos, resource_manager, world=None, grid_pos=None):
         image = pg.image.load("assets/graphics/solar_panels.png")
         self.image = image
+        resources = Buildings()
         self.name = "solar_panels"
         self.rect = self.image.get_rect(topleft=pos)
         self.resource_manager = resource_manager
@@ -164,11 +173,11 @@ class Solar_Panels(Buildings):
         self.consumption_cooldown = pg.time.get_ticks()
 
         # Resource consumption rates per second
-        self.water_consumption = 1
-        self.thugoleon_consumption = 1
+        self.water_consumption = resources.consumption["solar_panels"]["water"]
+        self.thugoleon_consumption = resources.consumption["solar_panels"]["thugoleons"]
 
         # Resource production rates per second
-        self.electricity_production_rate = 10
+        self.electricity_production_rate = resources.production["solar_panels"]["electricity"]
 
         # Store adjacent road position
         self.adjacent_road = None
@@ -198,6 +207,7 @@ class Water_Treatment_Plant(Buildings):
     def __init__(self, pos, resource_manager, world=None, grid_pos=None):
         image = pg.image.load("assets/graphics/water_treatment_plant.png")
         self.image = image
+        resources = Buildings()
         self.name = "water_treatment_plant"
         self.rect = self.image.get_rect(topleft=pos)
         self.resource_manager = resource_manager
@@ -208,11 +218,11 @@ class Water_Treatment_Plant(Buildings):
         self.consumption_cooldown = pg.time.get_ticks()
 
         # Resource consumption rates per second
-        self.electricity_consumption = 1
-        self.thugoleon_consumption = 1
+        self.electricity_consumption = resources.consumption["water_treatment_plant"]["electricity"]
+        self.thugoleon_consumption = resources.consumption["water_treatment_plant"]["thugoleons"]
 
         # Resource production rates per second
-        self.water_production_rate = 10
+        self.water_production_rate = resources.production["water_treatment_plant"]["water"]
 
         # Store adjacent road position
         self.adjacent_road = None
