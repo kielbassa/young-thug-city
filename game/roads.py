@@ -22,39 +22,37 @@ class Road:
             "left": roads[grid_pos[0] - 1][grid_pos[1]] if grid_pos[0] > 0 else None,
         }
 
-        # Determine the road texture based on connections
-        if connections["top"] and connections["right"] and connections["bottom"] and connections["left"]:
-            self.image = self.tiles["crossroad"]
-        elif connections["top"] and connections["right"] and connections["bottom"]:
-            self.image = self.tiles["T_123"]
-        elif connections["right"] and connections["bottom"] and connections["left"]:
-            self.image = self.tiles["T_234"]
-        elif connections["top"] and connections["bottom"] and connections["left"]:
-            self.image = self.tiles["T_134"]
-        elif connections["top"] and connections["right"] and connections["left"]:
-            self.image = self.tiles["T_124"]
-        elif connections["top"] and connections["bottom"]:
-            self.image = self.tiles["straight_13"]
-        elif connections["left"] and connections["right"]:
-            self.image = self.tiles["straight_24"]
-        elif connections["top"] and connections["right"]:
-            self.image = self.tiles["curve_12"]
-        elif connections["right"] and connections["bottom"]:
-            self.image = self.tiles["curve_23"]
-        elif connections["bottom"] and connections["left"]:
-            self.image = self.tiles["curve_34"]
-        elif connections["left"] and connections["top"]:
-            self.image = self.tiles["curve_14"]
-        elif connections["top"]:
-            self.image = self.tiles["end_1"]
-        elif connections["right"]:
-            self.image = self.tiles["end_2"]
-        elif connections["bottom"]:
-            self.image = self.tiles["end_3"]
-        elif connections["left"]:
-            self.image = self.tiles["end_4"]
-        else:
-            self.image = self.tiles["straight_13"]  # Default texture
+        # Convert connections to a binary representation (1 for connected, 0 for not)
+        connected = [
+            1 if connections["top"] else 0,
+            1 if connections["right"] else 0,
+            1 if connections["bottom"] else 0,
+            1 if connections["left"] else 0
+        ]
+
+        # connection mapping
+        connection_to_texture = {
+            (1, 1, 1, 1): "crossroad",    # All connections
+            (1, 1, 1, 0): "T_123",        # Top, Right, Bottom
+            (0, 1, 1, 1): "T_234",        # Right, Bottom, Left
+            (1, 0, 1, 1): "T_134",        # Top, Bottom, Left
+            (1, 1, 0, 1): "T_124",        # Top, Right, Left
+            (1, 0, 1, 0): "straight_13",  # Top, Bottom
+            (0, 1, 0, 1): "straight_24",  # Left, Right
+            (1, 1, 0, 0): "curve_12",     # Top, Right
+            (0, 1, 1, 0): "curve_23",     # Right, Bottom
+            (0, 0, 1, 1): "curve_34",     # Bottom, Left
+            (1, 0, 0, 1): "curve_14",     # Left, Top
+            (1, 0, 0, 0): "end_1",        # Top only
+            (0, 1, 0, 0): "end_2",        # Right only
+            (0, 0, 1, 0): "end_3",        # Bottom only
+            (0, 0, 0, 1): "end_4",        # Left only
+            (0, 0, 0, 0): "straight_13",  # Default texture (no connections)
+        }
+
+        # Get texture name based on connection pattern
+        texture_name = connection_to_texture.get(tuple(connected), "straight_13")
+        self.image = self.tiles[texture_name]
 
     def update(self):
         pass
