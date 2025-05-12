@@ -1,6 +1,5 @@
 import pygame as pg
 import sys
-import random
 from .world import World
 from .settings import WORLD_SIZE
 from .utils import draw_text
@@ -8,7 +7,6 @@ from .camera import Camera
 from .hud import Hud
 from .resource_manager import ResourceManager
 from .buildings import Buildings
-from .citizens import Citizen
 
 class Game:
     def __init__(self, screen, clock):

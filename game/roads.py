@@ -1,5 +1,4 @@
 import pygame as pg
-from .settings import TILE_SIZE
 
 class Road:
     def __init__(self, pos, resource_manager=None):
@@ -8,7 +7,7 @@ class Road:
         self.image = self.tiles["straight_13"]  # Default texture
         self.rect = self.image.get_rect(topleft=pos) if pos else None
         self.description = "A road tile that connects buildings and allows citizens and resources to move around."
-        
+
         # Apply cost if resource manager is provided
         if resource_manager:
             self.resource_manager = resource_manager

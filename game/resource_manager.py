@@ -1,5 +1,4 @@
-import pygame as pg
-from .settings import *
+from .settings import ELECTRICITY_MULTIPLIER, MOISTURE_MULTIPLIER
 
 class ResourceManager:
     def __init__(self):

@@ -1,5 +1,5 @@
 import pygame as pg
-from .settings import CAMERA_SPEED, WORLD_SIZE, TILE_SIZE
+from .settings import CAMERA_SPEED
 
 class Camera:
     def __init__(self, width, height, hud):
