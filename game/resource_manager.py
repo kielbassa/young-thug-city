@@ -23,10 +23,12 @@ class ResourceManager:
         }
 
     def apply_cost_to_resource(self, building):
+        """Apply the cost of a building to the global resources."""
         for resource, cost in self.costs[building].items():
             self.resources[resource] -= cost
 
     def is_affordable(self, building):
+        """Check if the player can afford a building."""
         affordable = True
         for resource, cost in self.costs[building].items():
             if self.resources[resource] < cost:

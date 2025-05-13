@@ -6,27 +6,28 @@ from pathfinding.finder.a_star import AStarFinder
 
 class Citizen:
     def __init__(self, tile, world):
-            self.world = world
-            self.world.entities.append(self)
-            image = pg.image.load("assets/graphics/citizen.png").convert_alpha()
-            self.name = "citizen"
-            self.image = pg.transform.scale(image, (image.get_width()*2, image.get_height()*2))
-            self.tile = tile
+        """Initialize a citizen object."""
+        self.world = world
+        self.world.entities.append(self)
+        image = pg.image.load("assets/graphics/citizen.png").convert_alpha()
+        self.name = "citizen"
+        self.image = pg.transform.scale(image, (image.get_width()*2, image.get_height()*2))
+        self.tile = tile
 
-            # pathfinding
-            self.world.citizens[tile["grid"][0]][tile["grid"][1]] = self
-            self.move_timer = pg.time.get_ticks()
+        # pathfinding
+        self.world.citizens[tile["grid"][0]][tile["grid"][1]] = self
+        self.move_timer = pg.time.get_ticks()
 
-            # Movement interpolation
-            self.movement_speed = 0.1  # Adjust this to control movement speed
-            self.current_pos = pg.Vector2(tile["render_pos"][0], tile["render_pos"][1])
-            self.target_pos = pg.Vector2(tile["render_pos"][0], tile["render_pos"][1])
-            self.is_moving = False
+        # Movement interpolation
+        self.movement_speed = 0.1  # Adjust this to control movement speed
+        self.current_pos = pg.Vector2(tile["render_pos"][0], tile["render_pos"][1])
+        self.target_pos = pg.Vector2(tile["render_pos"][0], tile["render_pos"][1])
+        self.is_moving = False
 
-            # Initialize a placeholder grid for the initial path creation
-            self.grid = Grid(matrix=self.world.collision_matrix)
+        # Initialize a placeholder grid for the initial path creation
+        self.grid = Grid(matrix=self.world.collision_matrix)
 
-            self.create_path()
+        self.create_path()
 
     def create_path(self):
         max_attempts = 50
@@ -57,7 +58,7 @@ class Citizen:
                     if self.world.citizens[i][j] is not None:
                         temp_collision_matrix[j][i] = 0
 
-            # Mark all non-road tiles as unwalkable
+            # Mark all non-road tiles as non-walkable
             for i in range(self.world.grid_length_x):
                 for j in range(self.world.grid_length_y):
                     if self.world.roads[i][j] is None:

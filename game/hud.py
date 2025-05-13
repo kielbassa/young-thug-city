@@ -16,7 +16,7 @@ class Hud:
         self.resources_surface = pg.Surface((width, height*0.02), pg.SRCALPHA)
         self.resources_rect = self.resources_surface.get_rect(topleft=(0,0))
         self.resources_surface.fill(self.hud_color)
-        
+
         # For tracking changes to examined_tile for caching
         self.prev_examined_tile_attr = {}
 
@@ -35,12 +35,12 @@ class Hud:
         self.select_surface = pg.Surface((width * 0.3, height* 0.25), pg.SRCALPHA)
         self.select_rect = self.select_surface.get_rect(topleft=(self.width * 0.35, self.height*0.8))
         self.select_surface.fill(self.hud_color)
-        
+
         # Caching variables for select hud
         self.select_cache_valid = False
         self.cached_select_surface = pg.Surface((width * 0.3, height* 0.25), pg.SRCALPHA)
         self.last_examined_tile = None
-        
+
         # Caching statistics for performance tracking
         self.cache_hits = 0
         self.cache_misses = 0
@@ -72,7 +72,7 @@ class Hud:
         if self.examined_tile != self.last_examined_tile:
             self.select_cache_valid = False
             self.last_examined_tile = self.examined_tile
-            
+
             # Store current attribute values for deeper comparison
             if self.examined_tile is not None:
                 self.prev_examined_tile_attr = {
@@ -121,8 +121,8 @@ class Hud:
     def draw(self, screen):
         # resource
         screen.blit(self.resources_surface, (0, 0))
-        
-        # Display cache efficiency stats 
+
+        # Display cache efficiency stats
         cache_total = self.cache_hits + self.cache_misses
         if cache_total > 0:
             efficiency = (self.cache_hits / cache_total) * 100
@@ -141,7 +141,7 @@ class Hud:
         # select hud
         if self.examined_tile is not None:
             self.draw_select_hud(screen)
-            
+
         # resources
         pos = self.width - 750
         for resource, resource_value in self.resource_manager.resources.items():
@@ -196,17 +196,17 @@ class Hud:
                 if current_attrs != self.prev_examined_tile_attr:
                     self.select_cache_valid = False
                     self.prev_examined_tile_attr = current_attrs
-            
+
             if self.select_cache_valid:
                 self.cache_hits += 1
                 screen.blit(self.cached_select_surface, (self.width * 0.35, self.height * 0.74))
                 return
-            
+
         # If cache is invalid, render to cached surface
         self.cache_misses += 1
         self.cached_select_surface.fill(self.hud_color)
         w, h = self.select_rect.width, self.select_rect.height
-        
+
         img = self.examined_tile.image.copy()
         img_scale = self.scale_image(img, h=h * 0.7)
         self.cached_select_surface.blit(img_scale, (85, h * 0.05 + 45))
@@ -291,7 +291,7 @@ class Hud:
             # Render the last line
             if line:
                 draw_text(self.cached_select_surface, line, text_size, (255, 255, 255), (desc_x, desc_y + y_offset))
-                
+
         # Mark cache as valid and display it
         self.select_cache_valid = True
         screen.blit(self.cached_select_surface, (self.width * 0.35, self.height * 0.74))
@@ -417,7 +417,7 @@ class Hud:
             elif building_name == "solar_panels":
                 # Calculate potential electricity production based on elevation
                 potential_rate = round(self.world.world[grid_pos[0]][grid_pos[1]]["elevation"] * ELECTRICITY_MULTIPLIER)
-                
+
                 potential_water_consumption = round(self.building.consumption["solar_panels"]["water"] + potential_rate * SOLAR_PANEL_CLEANING_COST_MULTIPLIER)
                 thugoleon_consumption = self.building.consumption["solar_panels"]["thugoleons"]
 
@@ -458,15 +458,23 @@ class Hud:
                 screen.blit(cons_surface2, (self.preview_rect.x + 10, self.preview_rect.y + y_offset))
 
     def load_images(self):
+        """Loads all hud textures"""
         residential_building = pg.image.load("assets/graphics/residential_building.png").convert_alpha()
         factory = pg.image.load("assets/graphics/factory.png").convert_alpha()
         solar_panels = pg.image.load("assets/graphics/solar_panels.png").convert_alpha()
         water_treatment_plant = pg.image.load("assets/graphics/water_treatment_plant.png").convert_alpha()
         road = pg.image.load("assets/graphics/road_tiles/road_1.png").convert_alpha()
 
-        return {"residential_building": residential_building, "factory": factory, "solar_panels": solar_panels, "water_treatment_plant": water_treatment_plant, "road": road}
+        return {
+            "residential_building": residential_building,
+            "factory": factory,
+            "solar_panels": solar_panels,
+            "water_treatment_plant": water_treatment_plant,
+            "road": road
+        }
 
     def scale_image(self, image, w=None, h=None):
+        """Scales the given image to the specified width and height."""
         if w is None and h is None:
             pass
         elif h is None:
@@ -480,4 +488,3 @@ class Hud:
         else:
             image = pg.transform.scale(image, (int(w), int(h)))
         return image
-

@@ -7,6 +7,7 @@ from .roads import Road
 
 class World:
     def __init__(self, buildings, resource_manager, entities, hud, clock, grid_length_x, grid_length_y, width, height, seed=None):
+        """Initializes the game world with its attributes"""
         self.resource_manager = resource_manager
         self.building_attributes = buildings
         self.entities = entities
@@ -24,7 +25,7 @@ class World:
 
         self.perlin_scale = grid_length_x/2
 
-        # Add animation variables
+        # animation variables
         self.animation_frame = 0
         self.animation_speed = 0.2  # Controls how fast frames change
         self.animation_timer = 0
@@ -35,18 +36,20 @@ class World:
         self.world = self.create_world()
         self.collision_matrix = self.create_collision_matrix()
 
+        # grid maps of objects
         self.buildings = [[None for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
         self.citizens = [[None for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
         self.roads = [[None for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
 
+        # tile variables for hud
         self.temp_tile = None
         self.examine_tile = None
 
-        # load click sound
+        # sounds
         self.click_sound = pg.mixer.Sound('assets/audio/click.wav')
 
     def update_road_textures(self, grid_pos):
-        # Update the texture of the road at the given position and its neighbors
+        """ Update the texture of the road at the given position and its neighbors"""
         neighbors = [
             (grid_pos[0], grid_pos[1] - 1),  # Top
             (grid_pos[0] + 1, grid_pos[1]),  # Right
@@ -67,6 +70,7 @@ class World:
                     neighbor_road.update_texture((nx, ny), self.roads)
 
     def update(self, clock, camera):
+        """Logic that updates every frame"""
         self.camera = camera
         # Update animation timer and frame
         self.animation_timer += clock.get_time() / 1000.0  # Convert to seconds
@@ -77,6 +81,7 @@ class World:
         mouse_pos = pg.mouse.get_pos()
         mouse_action = pg.mouse.get_pressed()
 
+        # on right click stop examining tile
         if mouse_action[2]:
             self.examine_tile = None
             self.hud.examined_tile = None
@@ -103,8 +108,7 @@ class World:
                 # Special case for water treatment plant - can be built on mud
                 if self.hud.selected_tile["name"] == "water_treatment_plant":
                     building_can_be_placed_here = tile_type == "mud"
-                    # For water treatment plant, we need to override the default buildable check
-                    # since mud tiles aren't normally buildable
+                    # override the default buildable check since mud tiles aren't normally buildable
                     if tile_type == "mud":
                         buildable = True
 
@@ -120,7 +124,7 @@ class World:
                         "buildable": buildable and self.resource_manager.is_affordable(self.hud.selected_tile["name"]) and building_can_be_placed_here,
                         "empty": empty,
                         "user_built": user_built,
-                        "road_access": self.adjecent_roads(grid_pos),  # Check if there are adjacent roads
+                        "road_access": self.check_adjacent_roads(grid_pos),  # Check if there are adjacent roads
                         "water_resource": tile_type == "mud" and self.hud.selected_tile["name"] == "water_treatment_plant",
                     }
 
@@ -128,7 +132,7 @@ class World:
                 if self.hud.selected_tile["name"] == "water_treatment_plant" and tile_type == "mud":
                     can_place = (
                         mouse_action[0] and
-                        self.adjecent_roads(grid_pos) and
+                        self.check_adjacent_roads(grid_pos) and
                         self.buildings[grid_pos[0]][grid_pos[1]] is None and
                         self.roads[grid_pos[0]][grid_pos[1]] is None and
                         self.resource_manager.is_affordable(self.hud.selected_tile["name"])
@@ -146,7 +150,7 @@ class World:
                     can_place = (
                         mouse_action[0] and
                         buildable and
-                        self.adjecent_roads(grid_pos) and
+                        self.check_adjacent_roads(grid_pos) and
                         self.buildings[grid_pos[0]][grid_pos[1]] is None and
                         self.roads[grid_pos[0]][grid_pos[1]] is None and
                         building_can_be_placed_here and
@@ -157,7 +161,6 @@ class World:
                     ent = None
                     match self.hud.selected_tile["name"]:
                         case "road":
-                            # Create road instance with resource_manager
                             ent = Road(self.world[grid_pos[0]][grid_pos[1]]["render_pos"], self.resource_manager)
                             self.roads[grid_pos[0]][grid_pos[1]] = ent
                             self.update_road_textures(grid_pos)
@@ -181,7 +184,7 @@ class World:
                             ent.water_production_rate = water_production_rate
                             ent.electricity_consumption = electricity_consumption_rate
                             self.buildings[grid_pos[0]][grid_pos[1]] = ent
-
+                    # add the created entity to the list
                     self.entities.append(ent)
                     self.world[grid_pos[0]][grid_pos[1]]["buildable"] = False
                     self.world[grid_pos[0]][grid_pos[1]]["empty"] = False
@@ -208,8 +211,7 @@ class World:
                 if road is not None:
                     # Remove road
                     self.click_sound.play()
-                    if road in self.entities:
-                        self.entities.remove(road)
+                    self.entities.remove(road)
                     self.roads[grid_pos[0]][grid_pos[1]] = None
                 self.world[grid_pos[0]][grid_pos[1]]["buildable"] = True
                 self.world[grid_pos[0]][grid_pos[1]]["empty"] = True
@@ -229,84 +231,85 @@ class World:
                     self.hud.examined_tile = building
 
     def draw(self, screen, camera):
-            screen.blit(self.grass_tiles, (camera.scroll.x, camera.scroll.y))
-            for x in range(self.grid_length_x):
-                for y in range(self.grid_length_y):
-                    render_pos = self.world[x][y]["render_pos"]
-                    # draw world tiles
-                    tile = self.world[x][y]["tile"]
-                    if tile != "":
-                        if tile == "water":
-                            # Render animated water frame
-
-                            water_frame = self.water_frames[self.animation_frame % len(self.water_frames)]
-                            screen.blit(water_frame,
-                                        (render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
-                                        render_pos[1] - (water_frame.get_height() - 2 * TILE_SIZE) + camera.scroll.y))
-                        else:
-                            # Render other tiles normally
-                            screen.blit(self.tiles[tile],
-                                        (render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
-                                        render_pos[1] - (self.tiles[tile].get_height() - 2 * TILE_SIZE) + camera.scroll.y))
-
-                    # draw roads
-                    road = self.roads[x][y]
-                    if road is not None:
-                        screen.blit(road.image,
+        """draw logic for the world class"""
+        screen.blit(self.grass_tiles, (camera.scroll.x, camera.scroll.y))
+        for x in range(self.grid_length_x):
+            for y in range(self.grid_length_y):
+                render_pos = self.world[x][y]["render_pos"]
+                # draw world tiles
+                tile = self.world[x][y]["tile"]
+                if tile != "":
+                    if tile == "water":
+                        # Render animated water frame
+                        water_frame = self.water_frames[self.animation_frame % len(self.water_frames)]
+                        screen.blit(water_frame,
                                     (render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
-                                    render_pos[1] - (road.image.get_height() - 2 * TILE_SIZE) + camera.scroll.y))
-                    # draw buildings
-                    building = self.buildings[x][y]
-                    if building is not None:
-                        screen.blit(building.image,
+                                    render_pos[1] - (water_frame.get_height() - 2 * TILE_SIZE) + camera.scroll.y))
+                    else:
+                        # Render other tiles normally
+                        screen.blit(self.tiles[tile],
                                     (render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
-                                    render_pos[1] - (building.image.get_height() - 2 * TILE_SIZE) + camera.scroll.y))
-                        if self.examine_tile is not None:
-                            if (x==self.examine_tile[0] and y==self.examine_tile[1]):
-                                mask = pg.mask.from_surface(building.image).outline()
-                                mask = [(x + render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
-                                        y + render_pos[1] - (building.image.get_height() - 2 * TILE_SIZE) + camera.scroll.y
-                                        ) for x, y in mask]
-                                pg.draw.polygon(screen, (255, 255, 255), mask, 3)
+                                    render_pos[1] - (self.tiles[tile].get_height() - 2 * TILE_SIZE) + camera.scroll.y))
 
-                    # draw citizens
-                    citizen = self.citizens[x][y]
-                    if citizen is not None:
-                        screen.blit(citizen.image,
-                                    (citizen.current_pos.x + self.grass_tiles.get_width()/2 + camera.scroll.x,
-                                     citizen.current_pos.y - (citizen.image.get_height() - 1.5*TILE_SIZE) + camera.scroll.y))
+                # draw roads
+                road = self.roads[x][y]
+                if road is not None:
+                    screen.blit(road.image,
+                                (render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
+                                render_pos[1] - (road.image.get_height() - 2 * TILE_SIZE) + camera.scroll.y))
+                # draw buildings
+                building = self.buildings[x][y]
+                if building is not None:
+                    screen.blit(building.image,
+                                (render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
+                                render_pos[1] - (building.image.get_height() - 2 * TILE_SIZE) + camera.scroll.y))
+                    if self.examine_tile is not None:
+                        if (x==self.examine_tile[0] and y==self.examine_tile[1]):
+                            mask = pg.mask.from_surface(building.image).outline()
+                            mask = [(x + render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
+                                    y + render_pos[1] - (building.image.get_height() - 2 * TILE_SIZE) + camera.scroll.y
+                                    ) for x, y in mask]
+                            pg.draw.polygon(screen, (255, 255, 255), mask, 3)
 
-                    # Draw red polygon around the tile in delete mode
-                    if self.hud.delete_mode:
-                        grid_pos = self.mouse_to_grid(pg.mouse.get_pos()[0], pg.mouse.get_pos()[1], camera.scroll)
-                        if grid_pos == (x, y):
-                            iso_poly = self.world[x][y]["iso_poly"]
-                            iso_poly = [(px + self.grass_tiles.get_width() / 2 + camera.scroll.x,
-                                        py + camera.scroll.y + 0.5*TILE_SIZE) for px, py in iso_poly]
+                # draw citizens
+                citizen = self.citizens[x][y]
+                if citizen is not None:
+                    screen.blit(citizen.image,
+                                (citizen.current_pos.x + self.grass_tiles.get_width()/2 + camera.scroll.x,
+                                    citizen.current_pos.y - (citizen.image.get_height() - 1.5*TILE_SIZE) + camera.scroll.y))
 
-                            # Create a transparent surface for the polygon
-                            polygon_surface = pg.Surface(screen.get_size(), pg.SRCALPHA)
-                            pg.draw.polygon(polygon_surface, (255, 0, 0, 128), iso_poly)  # Red with 50% transparency
-                            screen.blit(polygon_surface, (0, 0))
+                # Draw red polygon around the tile in delete mode
+                if self.hud.delete_mode:
+                    grid_pos = self.mouse_to_grid(pg.mouse.get_pos()[0], pg.mouse.get_pos()[1], camera.scroll)
+                    if grid_pos == (x, y):
+                        iso_poly = self.world[x][y]["iso_poly"]
+                        iso_poly = [(px + self.grass_tiles.get_width() / 2 + camera.scroll.x,
+                                    py + camera.scroll.y + 0.5*TILE_SIZE) for px, py in iso_poly]
 
-            # Draw the temporary tile's polygon
-            if self.temp_tile is not None:
-                iso_poly = self.temp_tile["iso_poly"]
-                iso_poly = [(x + self.grass_tiles.get_width()/2 + camera.scroll.x, y - (self.temp_tile["image"].get_height() - 2.5*TILE_SIZE) + camera.scroll.y) for x, y in iso_poly]
-                if self.temp_tile["buildable"] or self.temp_tile["water_resource"] and self.hud.selected_tile["name"] == "water_treatment_plant":
-                    pg.draw.polygon(screen, (255, 255, 255), iso_poly, 3)
-                elif self.temp_tile["user_built"]:
-                    pg.draw.polygon(screen, (0, 0, 255), iso_poly, 3)
-                else:
-                    pg.draw.polygon(screen, (255, 0, 0), iso_poly, 3)
-                render_pos = self.temp_tile["render_pos"]
-                screen.blit(self.temp_tile["image"],
-                            (
-                                render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
-                                render_pos[1] - (self.temp_tile["image"].get_height() - 2 * TILE_SIZE) + camera.scroll.y)
-                            )
+                        # Create a transparent surface for the polygon
+                        polygon_surface = pg.Surface(screen.get_size(), pg.SRCALPHA)
+                        pg.draw.polygon(polygon_surface, (255, 0, 0, 128), iso_poly)  # Red with 50% transparency
+                        screen.blit(polygon_surface, (0, 0))
+
+        # Draw the temporary tile's polygon
+        if self.temp_tile is not None:
+            iso_poly = self.temp_tile["iso_poly"]
+            iso_poly = [(x + self.grass_tiles.get_width()/2 + camera.scroll.x, y - (self.temp_tile["image"].get_height() - 2.5*TILE_SIZE) + camera.scroll.y) for x, y in iso_poly]
+            if self.temp_tile["buildable"] or self.temp_tile["water_resource"] and self.hud.selected_tile["name"] == "water_treatment_plant":
+                pg.draw.polygon(screen, (255, 255, 255), iso_poly, 3)
+            elif self.temp_tile["user_built"]:
+                pg.draw.polygon(screen, (0, 0, 255), iso_poly, 3)
+            else:
+                pg.draw.polygon(screen, (255, 0, 0), iso_poly, 3)
+            render_pos = self.temp_tile["render_pos"]
+            screen.blit(self.temp_tile["image"],
+                        (
+                            render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
+                            render_pos[1] - (self.temp_tile["image"].get_height() - 2 * TILE_SIZE) + camera.scroll.y)
+                        )
 
     def create_world(self):
+        """Initializes the world and its coordinates"""
         world = []
         for grid_x in range(self.grid_length_x):
             world.append([])
@@ -319,6 +322,7 @@ class World:
         return world
 
     def grid_to_world(self, grid_x, grid_y):
+        """converts the empty world grid to one with a procedurally generated world"""
         rect = [
             (grid_x * TILE_SIZE, grid_y * TILE_SIZE),
             (grid_x * TILE_SIZE + TILE_SIZE, grid_y * TILE_SIZE),
@@ -327,7 +331,6 @@ class World:
         ]
 
         iso_poly = [self.cart_to_iso(x, y) for x, y in rect]
-
         minx = min([x for x, y in iso_poly])
         miny = min([y for x, y in iso_poly])
 
@@ -372,7 +375,7 @@ class World:
             elif moisture > 0.6 and elevation < 0.7:
                 tile = "trees"
             else:
-                if random_variation < 0.04:  # 5% chance
+                if random_variation < 0.04:  # 4% chance
                     if moisture > 0.4:
                         tile = "trees"
                     elif elevation > 0.58:
@@ -398,7 +401,8 @@ class World:
 
         return out
 
-    def adjecent_roads(self, grid_pos):
+    def check_adjacent_roads(self, grid_pos):
+        """Check if the tile has a road adjacent to it"""
         if self.hud.selected_tile["name"] == "road":
             return True
         else:
@@ -421,11 +425,13 @@ class World:
             return False
 
     def cart_to_iso(self,x,y):
+        """convert cartesian coordinates to isometric coordinates"""
         iso_x = x - y
         iso_y = (x + y) / 2
         return iso_x, iso_y
 
     def mouse_to_grid(self, x, y, scroll):
+        """convert mouse position to grid coordinates"""
         # transform to world position (remove camera scroll and offset)
         world_x = x - scroll.x - self.grass_tiles.get_width()/2
         world_y = y - scroll.y
@@ -438,8 +444,8 @@ class World:
         return grid_x, grid_y
 
     def create_collision_matrix(self):
+        """Create a collision matrix for the world and its entities."""
         collision_matrix = [[1 for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
-
         for x in range(self.grid_length_x):
             for y in range(self.grid_length_y):
                 if not self.world[x][y]["empty"]:
@@ -448,6 +454,7 @@ class World:
         return collision_matrix
 
     def can_place_tile(self, grid_pos):
+        """Check if a tile can be placed at the given grid position."""
         mouse_on_panel = False
         for rect in [self.hud.resources_rect, self.hud.build_rect]:
             if rect.collidepoint(pg.mouse.get_pos()):
@@ -458,14 +465,15 @@ class World:
         return world_bounds and not mouse_on_panel
 
     def load_water_frames(self):
-            # Load your water animation frames
-            frames = []
-            for i in range(4):  # Adjust range based on number of frames you have
-                frame = pg.image.load(f"assets/graphics/water_animation/water_{i}.png").convert_alpha()
-                frames.append(frame)
-            return frames
+        """Load water animation frames"""
+        frames = []
+        for i in range(4):  # Adjust range based on number of frames you have
+            frame = pg.image.load(f"assets/graphics/water_animation/water_{i}.png").convert_alpha()
+            frames.append(frame)
+        return frames
 
     def load_images(self):
+        """Loads all textures used in the game."""
         block = pg.image.load("assets/graphics/block.png").convert_alpha()
         rock = pg.image.load("assets/graphics/rock.png").convert_alpha()
         trees = pg.image.load("assets/graphics/trees.png").convert_alpha()

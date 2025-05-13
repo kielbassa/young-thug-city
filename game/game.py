@@ -14,22 +14,11 @@ class Game:
         self.clock = clock
         self.width, self.height = screen.get_size()
 
-        # buildings
         self.buildings = Buildings()
-
-        # entities
         self.entities = []
-
-        # resource manager
         self.resource_manager = ResourceManager()
-
-        # hud
         self.hud = Hud(self.resource_manager,self.width, self.height)
-
-        # world
         self.world = World(self.buildings, self.resource_manager, self.entities, self.hud, self.clock, WORLD_SIZE, WORLD_SIZE, self.width, self.height)
-
-        # camera
         self.camera = Camera(self.width, self.height, self.hud)
 
     def run(self):
@@ -64,6 +53,7 @@ class Game:
         self.world.draw(self.screen, self.camera)
         self.hud.draw(self.screen)
         draw_text(self.screen,"fps={}".format(round(self.clock.get_fps())),25,(0,255,0),(15, 15))
+        # camera scroll debug info
         # draw_text(self.screen,"camera position x={}".format(self.camera.scroll.x),25,(0,255,0),(15, 45))
         # draw_text(self.screen,"camera position y={}".format(self.camera.scroll.y),25,(0,255,0),(15, 75))
         pg.display.flip()

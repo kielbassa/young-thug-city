@@ -24,8 +24,8 @@ class Menu:
         try:
             self.splash_img = pg.image.load('assets/graphics/splashscreen.png')
             # Scale image to be slightly smaller to leave room for text
-            scaled_height = self.screen.get_height() * 1  # 70% of screen height
-            scaled_width = self.screen.get_width() * 1   # 70% of screen width
+            scaled_height = self.screen.get_height() * 1
+            scaled_width = self.screen.get_width() * 1
             self.splash_img = pg.transform.scale(self.splash_img,
                                                (int(scaled_width),
                                                 int(scaled_height)))

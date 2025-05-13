@@ -3,7 +3,6 @@ from game.game import Game
 from game.menu import Menu
 
 def main():
-    # Initialize game variables
     running = True
     playing = False
 
@@ -11,7 +10,7 @@ def main():
     pg.mixer.init()
 
     pg.display.set_caption("Young Thug City")
-    screen = pg.display.set_mode((2560, 1440), pg.FULLSCREEN)
+    screen = pg.display.set_mode((1920, 1080), pg.FULLSCREEN)
     clock = pg.time.Clock()
 
     # menus
