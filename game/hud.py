@@ -14,6 +14,7 @@ class Hud:
 
         #resources hud
         self.resources_surface = pg.Surface((width, height*0.02), pg.SRCALPHA)
+        self.game_time = 0  # Track the game time (0-23 hours)
         self.resources_rect = self.resources_surface.get_rect(topleft=(0,0))
         self.resources_surface.fill(self.hud_color)
 
@@ -143,11 +144,18 @@ class Hud:
             self.draw_select_hud(screen)
 
         # resources
-        pos = self.width - 750
+        pos = self.width - 850
         for resource, resource_value in self.resource_manager.resources.items():
             txt = resource + ": " + str(resource_value)
             draw_text(screen, txt, 30, (255, 255, 255), (pos, 5))
             pos += len(txt) * 13
+        
+        # Draw in-game clock at the end of resources
+        if hasattr(self, 'game_time'):
+            hours_str = str(self.game_time).zfill(2)
+            minutes_str = "00"
+            time_str = f"Time: {hours_str}:{minutes_str}"
+            draw_text(screen, time_str, 30, (255, 255, 255), (pos, 5))
 
         # Draw building information tooltip if temp_tile exists
         if hasattr(self, 'world') and self.world.temp_tile is not None:
