@@ -22,6 +22,7 @@ class Citizen:
         self.current_pos = pg.Vector2(tile["render_pos"][0], tile["render_pos"][1])
         self.target_pos = pg.Vector2(tile["render_pos"][0], tile["render_pos"][1])
         self.is_moving = False
+        self.pending_in_building = False  # Flag to track if we should set in_Building when movement stops
 
         # Initialize a placeholder grid for the initial path creation
         self.grid = Grid(matrix=self.world.collision_matrix)
@@ -43,6 +44,9 @@ class Citizen:
         # Find a factory to work at
         self.find_workplace()
 
+        # Add citizen to the current tile's list
+        self.world.citizens[tile["grid"][0]][tile["grid"][1]].append(self)
+
         self.create_path()
 
     def find_home_road(self):
@@ -58,10 +62,6 @@ class Citizen:
         if building is not None and building.name == "residential_building" and building.adjacent_road:
             self.home_grid_pos = building.adjacent_road
             return
-
-        # Fallback: set the home grid position to the same as current position
-        # This ensures citizen at least has somewhere to go
-        self.home_grid_pos = self.tile["grid"]
 
     def find_workplace(self):
         """Find a factory to work at"""
@@ -92,6 +92,7 @@ class Citizen:
         if self.workplace_grid_pos:
             # Clear any existing path
             self.in_Building = False
+            self.pending_in_building = False  # Clear pending flag when going to work
             self.path = None
             self.path_index = 0
             self.destination_tile = None
@@ -106,8 +107,10 @@ class Citizen:
         if self.home_grid_pos:
             # Clear any existing path
             self.in_Building = False
+            self.pending_in_building = False  # Clear pending flag when going home
             self.path = None
             self.path_index = 0
+            # clear old destination tile
             self.destination_tile = None
 
             # Reset flags
@@ -229,19 +232,20 @@ class Citizen:
         # Get current position before removing
         current_grid_pos = self.tile["grid"]
 
-        # Remove citizen from current tile temporarily
-        self.world.citizens[current_grid_pos[0]][current_grid_pos[1]] = None
+        # Remove citizen from current tile
+        if self in self.world.citizens[current_grid_pos[0]][current_grid_pos[1]]:
+            self.world.citizens[current_grid_pos[0]][current_grid_pos[1]].remove(self)
 
-        # Check if the new tile is valid and not occupied
+        # Check if the new tile has a valid road
         if self.world.roads[new_tile[0]][new_tile[1]] is not None:
             # Valid move - update citizen position
-            self.world.citizens[new_tile[0]][new_tile[1]] = self
+            self.world.citizens[new_tile[0]][new_tile[1]].append(self)
             self.tile = self.world.world[new_tile[0]][new_tile[1]]
             self.target_pos = pg.Vector2(self.tile["render_pos"][0], self.tile["render_pos"][1])
             self.is_moving = True
         else:
-            # If tile is occupied or has no road, stay in current tile
-            self.world.citizens[self.tile["grid"][0]][self.tile["grid"][1]] = self
+            # If tile has no road, stay in current tile
+            self.world.citizens[self.tile["grid"][0]][self.tile["grid"][1]].append(self)
             self.create_path()  # Find a new path
 
     def update(self):
@@ -277,6 +281,7 @@ class Citizen:
             elif game_time == 16:
                 self.at_work = False
                 self.in_Building = False
+                self.pending_in_building = False  # Clear pending flag at end of work day
                 # Just let the citizen wander by not setting a specific destination
                 self.destination_tile = None
                 self.path = None
@@ -305,6 +310,11 @@ class Citizen:
             else:
                 self.current_pos = self.target_pos.copy()
                 self.is_moving = False
+
+                # If we're pending to enter a building, now we can actually go in
+                if self.pending_in_building:
+                    self.in_Building = True
+                    self.pending_in_building = False
 
         if now - self.move_timer > 500 and not self.is_moving:
             # Don't move if at work during work hours or at home during night hours
@@ -360,7 +370,8 @@ class Citizen:
 
                             # Clear the destination now that we've reached it
                             self.destination_tile = None
-                            self.in_Building = True
+                            # We'll set in_Building to True only after movement stops completely
+                            self.pending_in_building = True  # Flag to track pending building entry
                             # Special case for workplace during work hours
                             if reached_destination and self.workplace_grid_pos:
                                 at_workplace = (self.tile["grid"][0] == self.workplace_grid_pos[0] and
