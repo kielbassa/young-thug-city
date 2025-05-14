@@ -135,7 +135,7 @@ class Residential_Building(Buildings):
             if self.adjacent_road:
                 from .citizens import Citizen
                 road_tile = world.world[self.adjacent_road[0]][self.adjacent_road[1]]
-                Citizen(road_tile, world)
+                Citizen(road_tile, world, pos)
 
     def update(self):
         now = pg.time.get_ticks()

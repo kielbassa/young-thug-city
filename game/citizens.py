@@ -5,7 +5,7 @@ from pathfinding.core.grid import Grid
 from pathfinding.finder.a_star import AStarFinder
 
 class Citizen:
-    def __init__(self, tile, world):
+    def __init__(self, tile, world, home_tile):
         """Initialize a citizen object."""
         self.world = world
         self.world.entities.append(self)
@@ -27,7 +27,8 @@ class Citizen:
         # Initialize a placeholder grid for the initial path creation
         self.grid = Grid(matrix=self.world.collision_matrix)
 
-        # destination tile
+        # destination and home tile
+        self.home_tile = home_tile
         self.destination_tile = None
         self.create_path()
 
