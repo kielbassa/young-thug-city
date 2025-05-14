@@ -164,6 +164,12 @@ class World:
                     match self.hud.selected_tile["name"]:
                         case "road":
                             ent = Road(self.world[grid_pos[0]][grid_pos[1]]["render_pos"], self.resource_manager)
+                            # Clear trees if they exist at this location
+                            if self.world[grid_pos[0]][grid_pos[1]]["tile"] == "trees":
+                                self.world[grid_pos[0]][grid_pos[1]]["tile"] = ""
+                                self.world[grid_pos[0]][grid_pos[1]]["walkable"] = True
+                                # Update collision matrix to allow pathing through this tile
+                                self.collision_matrix[grid_pos[1]][grid_pos[0]] = 1
                             self.roads[grid_pos[0]][grid_pos[1]] = ent
                             self.update_road_textures(grid_pos)
                         case "factory":

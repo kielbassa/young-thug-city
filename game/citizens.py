@@ -15,7 +15,6 @@ class Citizen:
         self.tile = tile
 
         # pathfinding
-        self.world.citizens[tile["grid"][0]][tile["grid"][1]] = self
         self.move_timer = pg.time.get_ticks()
 
         # Movement interpolation
@@ -67,7 +66,6 @@ class Citizen:
     def find_workplace(self):
         """Find a factory to work at"""
         factories = []
-
         # Look for all factories in the world
         for x in range(self.world.grid_length_x):
             for y in range(self.world.grid_length_y):
@@ -115,7 +113,7 @@ class Citizen:
             # Reset flags
             self.at_work = False
 
-            # Set home as new destination with high priority
+            # Set home as new destination
             self.set_destination(self.home_grid_pos)
             return True
         return False
@@ -129,19 +127,14 @@ class Citizen:
                 self.go_home()
         if self.destination_tile is not None:
             # Create a path to the destination tile
-            # Create temporary collision matrix that includes other citizens
+            # Create temporary collision matrix
             temp_collision_matrix = [row[:] for row in self.world.collision_matrix]
 
-            # Mark positions of all citizens as non-walkable (except self)
+            # Mark all non-road tiles and non-walkable tiles as non-walkable
             for i in range(self.world.grid_length_x):
                 for j in range(self.world.grid_length_y):
-                    if self.world.citizens[i][j] is not None and self.world.citizens[i][j] != self:
-                        temp_collision_matrix[j][i] = 0
-
-            # Mark all non-road tiles as non-walkable
-            for i in range(self.world.grid_length_x):
-                for j in range(self.world.grid_length_y):
-                    if self.world.roads[i][j] is None:
+                    # Check both for road object and walkability status
+                    if self.world.roads[i][j] is None and not self.world.world[i][j]["walkable"]:
                         temp_collision_matrix[j][i] = 0
 
             # Exception for current citizen's position
@@ -177,12 +170,11 @@ class Citizen:
     def wander_randomly(self):
         """Create a random path when no specific destination"""
         # Check if it's night time
-        if hasattr(self.world.hud, 'game_time'):
-            game_time = self.world.hud.game_time
-            if game_time >= 20 or game_time < 7:
-                # It's night time - go home instead of wandering
-                self.go_home()
-                return
+        game_time = self.world.hud.game_time
+        if game_time >= 20 or game_time < 7:
+            # It's night time - go home instead of wandering
+            self.go_home()
+            return
 
         max_attempts = 50
         attempts = 0
@@ -193,7 +185,7 @@ class Citizen:
             for i in range(self.world.grid_length_x):
                 for j in range(self.world.grid_length_y):
                     # Check if tile has a road on it and is not occupied by another citizen
-                    if self.world.roads[i][j] is not None and self.world.citizens[i][j] is None:
+                    if self.world.roads[i][j] is not None:
                         road_tiles.append((i, j))
 
             # If no road tiles are available, stay in place
@@ -203,20 +195,14 @@ class Citizen:
             # Choose a random road tile as destination
             x, y = random.choice(road_tiles)
 
-            # Create temporary collision matrix that includes other citizens
+            # Create temporary collision matrix
             temp_collision_matrix = [row[:] for row in self.world.collision_matrix]
 
-            # Mark positions of all citizens as non-walkable
+            # Mark all non-road tiles as non-walkable
             for i in range(self.world.grid_length_x):
                 for j in range(self.world.grid_length_y):
-                    if self.world.citizens[i][j] is not None:
+                    if self.world.roads[i][j] is None:
                         temp_collision_matrix[j][i] = 0
-
-            # Mark all road tiles as walkable
-            for i in range(self.world.grid_length_x):
-                for j in range(self.world.grid_length_y):
-                    if self.world.roads[i][j] is not None:
-                        temp_collision_matrix[j][i] = 1
 
             # Exception for current citizen's position
             current_pos = self.tile["grid"]
@@ -247,8 +233,7 @@ class Citizen:
         self.world.citizens[current_grid_pos[0]][current_grid_pos[1]] = None
 
         # Check if the new tile is valid and not occupied
-        if (self.world.citizens[new_tile[0]][new_tile[1]] is None and
-            self.world.roads[new_tile[0]][new_tile[1]] is not None):
+        if self.world.roads[new_tile[0]][new_tile[1]] is not None:
             # Valid move - update citizen position
             self.world.citizens[new_tile[0]][new_tile[1]] = self
             self.tile = self.world.world[new_tile[0]][new_tile[1]]
@@ -261,59 +246,55 @@ class Citizen:
 
     def update(self):
         now = pg.time.get_ticks()
+        game_time = self.world.hud.game_time
+        # Only process schedule when the hour changes
+        if game_time != self.last_hour_checked:
+            self.last_hour_checked = game_time
 
-        # Check game time and manage work schedule
-        if hasattr(self.world.hud, 'game_time'):
-            game_time = self.world.hud.game_time
+            # 7:00 AM - Head to work
+            if game_time == 7:
+                if self.workplace == None:
+                    self.find_workplace()
+                if self.workplace_grid_pos:
+                    self.at_work = False  # Not yet at work, but going there
+                    self.go_to_work()
 
-            # Only process schedule when the hour changes
-            if game_time != self.last_hour_checked:
-                self.last_hour_checked = game_time
-
-                # 7:00 AM - Head to work
-                if game_time == 7:
-                    if self.workplace == None:
-                        self.find_workplace()
-                    if self.workplace_grid_pos:
-                        self.at_work = False  # Not yet at work, but going there
-                        self.go_to_work()
-
-                # 8:00 AM to 4:00 PM - At work
-                elif game_time >= 8 and game_time < 16:
-                    # If at workplace, stay
-                    if self.workplace_grid_pos and self.tile["grid"][0] == self.workplace_grid_pos[0] and self.tile["grid"][1] == self.workplace_grid_pos[1]:
-                        self.at_work = True
-                        # Clear destination to prevent leaving work
-                        self.destination_tile = None
-                        self.path = None
-
-                    # If not at workplace or going there, send to work
-                    elif self.workplace_grid_pos and not self.at_work:
-                        # Force going to work regardless of current path
-                        self.go_to_work()
-
-                # 16:00 (4:00 PM) - End work day, start wandering
-                elif game_time == 16:
-                    self.at_work = False
-                    self.in_Building = False
-                    # Just let the citizen wander by not setting a specific destination
+            # 8:00 AM to 4:00 PM - At work
+            elif game_time >= 8 and game_time < 16:
+                # If at workplace, stay
+                if self.workplace_grid_pos and self.tile["grid"][0] == self.workplace_grid_pos[0] and self.tile["grid"][1] == self.workplace_grid_pos[1]:
+                    self.at_work = True
+                    # Clear destination to prevent leaving work
                     self.destination_tile = None
                     self.path = None
-                    self.wander_randomly()
 
-                # 20:00 (8:00 PM) - Head home for the night
-                elif game_time == 20:
-                    # Force going home regardless of current activity
-                    if self.go_home():
-                        # Set at_home flag to keep them at home
-                        self.at_home = True
-                        # Clear any other destination
-                        self.destination_tile = self.home_grid_pos
+                # If not at workplace or going there, send to work
+                elif self.workplace_grid_pos and not self.at_work:
+                    # Force going to work regardless of current path
+                    self.go_to_work()
 
-                # 7:00 AM - Allow leaving home
-                elif game_time == 7:
-                    # Reset at_home flag so they can leave
-                    self.at_home = False
+            # 16:00 (4:00 PM) - End work day, start wandering
+            elif game_time == 16:
+                self.at_work = False
+                self.in_Building = False
+                # Just let the citizen wander by not setting a specific destination
+                self.destination_tile = None
+                self.path = None
+                self.wander_randomly()
+
+            # 20:00 (8:00 PM) - Head home for the night
+            elif game_time == 20:
+                # Force going home regardless of current activity
+                if self.go_home():
+                    # Set at_home flag to keep them at home
+                    self.at_home = True
+                    # Clear any other destination
+                    self.destination_tile = self.home_grid_pos
+
+            # 7:00 AM - Allow leaving home
+            elif game_time == 7:
+                # Reset at_home flag so they can leave
+                self.at_home = False
 
         # Handle movement interpolation
         if self.is_moving:
@@ -325,54 +306,39 @@ class Citizen:
                 self.current_pos = self.target_pos.copy()
                 self.is_moving = False
 
-                # If we've reached the workplace during work hours, stay there
-                if hasattr(self.world.hud, 'game_time'):
-                    work_hours = self.world.hud.game_time >= 8 and self.world.hud.game_time < 16
-                    at_workplace = (self.workplace_grid_pos and
-                                    self.tile["grid"][0] == self.workplace_grid_pos[0] and
-                                    self.tile["grid"][1] == self.workplace_grid_pos[1])
-
-                    if at_workplace and work_hours:
-                        self.at_work = True
-                        # Clear destination to stay put
-                        self.destination_tile = None
-                        self.path = None
-
-        if now - self.move_timer > 1000 and not self.is_moving:
+        if now - self.move_timer > 500 and not self.is_moving:
             # Don't move if at work during work hours or at home during night hours
-            if hasattr(self.world.hud, 'game_time'):
-                game_time = self.world.hud.game_time
-                work_hours = game_time >= 8 and game_time < 16
-                night_hours = game_time >= 20 or game_time < 7
+            work_hours = game_time >= 8 and game_time < 16
+            night_hours = game_time >= 20 or game_time < 7
 
-                at_workplace = (self.workplace_grid_pos and
-                               self.tile["grid"][0] == self.workplace_grid_pos[0] and
-                               self.tile["grid"][1] == self.workplace_grid_pos[1])
+            at_workplace = (self.workplace_grid_pos and
+                            self.tile["grid"][0] == self.workplace_grid_pos[0] and
+                            self.tile["grid"][1] == self.workplace_grid_pos[1])
 
-                at_home = (self.home_grid_pos and
-                          self.tile["grid"][0] == self.home_grid_pos[0] and
-                          self.tile["grid"][1] == self.home_grid_pos[1])
+            at_home = (self.home_grid_pos and
+                        self.tile["grid"][0] == self.home_grid_pos[0] and
+                        self.tile["grid"][1] == self.home_grid_pos[1])
 
-                # Force stay at workplace during work hours
-                if at_workplace and work_hours:
-                    self.at_work = True
-                    self.move_timer = now
-                    self.destination_tile = None
-                    self.path = None
-                    return
+            # Force stay at workplace during work hours
+            if at_workplace and work_hours:
+                self.at_work = True
+                self.move_timer = now
+                self.destination_tile = None
+                self.path = None
+                return
 
-                # Force stay at home during night hours
-                if at_home and night_hours:
-                    self.at_home = True
-                    self.move_timer = now
-                    self.destination_tile = None
-                    self.path = None
-                    return
+            # Force stay at home during night hours
+            if at_home and night_hours:
+                self.at_home = True
+                self.move_timer = now
+                self.destination_tile = None
+                self.path = None
+                return
 
-                # If it's night time and not at home, force going home
-                elif night_hours and not at_home and not self.destination_tile == self.home_grid_pos:
-                    self.go_home()
-                    return
+            # If it's night time and not at home, force going home
+            elif night_hours and not at_home and not self.destination_tile == self.home_grid_pos:
+                self.go_home()
+                return
 
             # Check if we have a valid path and haven't reached the end
             if self.path and self.path_index < len(self.path):
@@ -393,7 +359,6 @@ class Citizen:
                             reached_destination = self.tile["grid"][0] == dest_x and self.tile["grid"][1] == dest_y
 
                             # Clear the destination now that we've reached it
-                            old_destination = self.destination_tile
                             self.destination_tile = None
                             self.in_Building = True
                             # Special case for workplace during work hours
@@ -415,17 +380,10 @@ class Citizen:
 
                                 if at_home:
                                     # Check if it's night time
-                                    if hasattr(self.world.hud, 'game_time'):
-                                        game_time = self.world.hud.game_time
-                                        if game_time >= 20 or game_time < 7:
-                                            # At home during night hours - stay home until morning
-                                            self.at_home = True
-                                            # Extend time before next movement attempt
-                                            self.move_timer = now + random.randint(5000, 10000)
-                                            return
-
-                                    # If daytime, just wait longer before wandering
-                                    self.move_timer = now + random.randint(2000, 5000)
+                                    if game_time >= 20 or game_time < 7:
+                                        # At home during night hours - stay home until morning
+                                        self.at_home = True
+                                        return
 
                         # Create a new random path if not at work and not at home during night
                         if not self.at_work and not self.at_home:
