@@ -27,6 +27,7 @@ class Game:
         self.world = World(self.buildings, self.resource_manager, self.entities, self.hud, self.clock, WORLD_SIZE, WORLD_SIZE, self.width, self.height)
         self.camera = Camera(self.width, self.height, self.hud)
 
+
     def run(self):
         self.playing = True
         while self.playing:

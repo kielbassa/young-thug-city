@@ -233,6 +233,8 @@ class World:
     def draw(self, screen, camera):
         """draw logic for the world class"""
         screen.blit(self.grass_tiles, (camera.scroll.x, camera.scroll.y))
+        # Get the game time from the HUD if available
+        game_time = getattr(self.hud, 'game_time', 12)  # Default to noon if not available
         for x in range(self.grid_length_x):
             for y in range(self.grid_length_y):
                 render_pos = self.world[x][y]["render_pos"]
@@ -307,6 +309,69 @@ class World:
                             render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
                             render_pos[1] - (self.temp_tile["image"].get_height() - 2 * TILE_SIZE) + camera.scroll.y)
                         )
+
+        # Define sunrise and sunset times
+        sunrise_start = 5   # 5:00 AM
+        sunrise_end = 7     # 7:00 AM
+        sunset_start = 17   # 6:00 PM
+        sunset_end = 20     # 8:00 PM
+
+        # Create a surface for the tint overlay
+        tint_overlay = pg.Surface((screen.get_width(), screen.get_height()), pg.SRCALPHA)
+
+        # Apply blue night tint if time is between sunset_end and sunrise_start
+        if game_time >= sunset_end or game_time < sunrise_start:
+            # Calculate alpha based on time (darkest at midnight, gradually lightens toward dawn/dusk)
+            if game_time >= sunset_end:
+                # Evening: sunset_end (alpha=50) to midnight (alpha=120)
+                night_progress = (game_time - sunset_end) / (24 - sunset_end)  # 0 to 1
+                alpha = int(40 + night_progress * 70)
+
+                # Keep some orange hue right after sunset (first 1.5 hours after sunset_end)
+                if game_time < sunset_end + 1.5:
+                    orange_factor = 1 - (game_time - sunset_end) / 1.5  # 1 to 0
+                    # Blend blue with orange
+                    blue = int(0 * (1 - orange_factor) + 0 * orange_factor)
+                    green = int(0 * (1 - orange_factor) + 80 * orange_factor)
+                    red = int(80 * (1 - orange_factor) + 150 * orange_factor)
+                    tint_overlay.fill((red, green, blue, alpha))
+                else:
+                    tint_overlay.fill((0, 0, 80, alpha))  # Dark blue with alpha transparency
+            else:
+                # Morning: midnight (alpha=120) to sunrise_start (alpha=50)
+                night_progress = (sunrise_start - game_time) / sunrise_start  # 1 to 0
+                alpha = int(50 + night_progress * 70)
+
+                # Add some orange hue right before sunrise (last 1.5 hours before sunrise_start)
+                if game_time > sunrise_start - 1.5:
+                    orange_factor = 1 - (sunrise_start - game_time) / 1.5  # 0 to 1
+                    # Blend blue with orange
+                    blue = int(80 * (1 - orange_factor) + 90 * orange_factor)
+                    green = int(0 * (1 - orange_factor) + 80 * orange_factor)
+                    red = int(0 * (1 - orange_factor) + 150 * orange_factor)
+                    tint_overlay.fill((red, green, blue, alpha))
+                else:
+                    tint_overlay.fill((0, 0, 80, alpha))  # Dark blue with alpha transparency
+
+        # Apply pinkish/orange hue during sunrise
+        elif game_time >= sunrise_start and game_time < sunrise_end:
+            # Transition from blue to normal
+            sunrise_progress = (game_time - sunrise_start) / (sunrise_end - sunrise_start)  # 0 to 1
+            alpha = int(80 * (1 - sunrise_progress))
+            # Pink/orange sunrise color
+            tint_overlay.fill((150, 80, 90, alpha))
+
+        # Apply pinkish/orange hue during sunset
+        elif game_time >= sunset_start and game_time < sunset_end:
+            # Transition from normal to blue
+            sunset_progress = (game_time - sunset_start) / (sunset_end - sunset_start)  # 0 to 1
+            alpha = int(80 * sunset_progress)
+            # Pink/orange sunset color
+            tint_overlay.fill((150, 80, 90, alpha))
+
+        # Apply the tint if we have one
+        if game_time >= sunset_start or game_time < sunrise_end:
+            screen.blit(tint_overlay, (0, 0))
 
     def create_world(self):
         """Initializes the world and its coordinates"""

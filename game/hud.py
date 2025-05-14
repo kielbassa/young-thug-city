@@ -144,12 +144,12 @@ class Hud:
             self.draw_select_hud(screen)
 
         # resources
-        pos = self.width - 850
+        pos = self.width - 950
         for resource, resource_value in self.resource_manager.resources.items():
             txt = resource + ": " + str(resource_value)
             draw_text(screen, txt, 30, (255, 255, 255), (pos, 5))
             pos += len(txt) * 13
-        
+
         # Draw in-game clock at the end of resources
         if hasattr(self, 'game_time'):
             hours_str = str(self.game_time).zfill(2)
