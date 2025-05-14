@@ -277,7 +277,7 @@ class World:
 
                 # draw citizens
                 citizen = self.citizens[x][y]
-                if citizen is not None:
+                if citizen is not None and not citizen.in_Building:
                     screen.blit(citizen.image,
                                 (citizen.current_pos.x + self.grass_tiles.get_width()/2 + camera.scroll.x,
                                     citizen.current_pos.y - (citizen.image.get_height() - 1.5*TILE_SIZE) + camera.scroll.y))
@@ -315,8 +315,8 @@ class World:
         # Define sunrise and sunset times
         sunrise_start = 5   # 5:00 AM
         sunrise_end = 7     # 7:00 AM
-        sunset_start = 17   # 6:00 PM
-        sunset_end = 20     # 8:00 PM
+        sunset_start = 18   # 6:00 PM
+        sunset_end = 21     # 8:00 PM
 
         # Create a surface for the tint overlay
         tint_overlay = pg.Surface((screen.get_width(), screen.get_height()), pg.SRCALPHA)
