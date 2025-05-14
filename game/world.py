@@ -40,6 +40,8 @@ class World:
         self.buildings = [[None for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
         self.citizens = [[None for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
         self.roads = [[None for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
+        # List to track residential buildings and factories for citizen pathing
+        self.residential_buildings = []
 
         # tile variables for hud
         self.temp_tile = None
