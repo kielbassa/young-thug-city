@@ -27,64 +27,73 @@ class Citizen:
         # Initialize a placeholder grid for the initial path creation
         self.grid = Grid(matrix=self.world.collision_matrix)
 
+        # destination tile
+        self.destination_tile = None
+        self.create_path()
+
+    def set_destination(self, destination_tile):
+        self.destination_tile = destination_tile
         self.create_path()
 
     def create_path(self):
-        max_attempts = 50
-        attempts = 0
+        if self.destination_tile is not None:
+            # if the citizen has a destination, create a path to the adjecent road tile
+            pass
+        else:
+            max_attempts = 50
+            attempts = 0
 
-        while attempts < max_attempts:
-            # Instead of random destination, find road tiles
-            road_tiles = []
-            for i in range(self.world.grid_length_x):
-                for j in range(self.world.grid_length_y):
-                    # Check if tile has a road on it and is not occupied by another citizen
-                    if self.world.roads[i][j] is not None and self.world.citizens[i][j] is None:
-                        road_tiles.append((i, j))
+            while attempts < max_attempts:
+                # find road tiles
+                road_tiles = []
+                for i in range(self.world.grid_length_x):
+                    for j in range(self.world.grid_length_y):
+                        # Check if tile has a road on it and is not occupied by another citizen
+                        if self.world.roads[i][j] is not None and self.world.citizens[i][j] is None:
+                            road_tiles.append((i, j))
 
-            # If no road tiles are available, stay in place
-            if not road_tiles:
-                break
+                # If no road tiles are available, stay in place
+                if not road_tiles:
+                    break
 
-            # Choose a random road tile as destination
-            x, y = random.choice(road_tiles)
+                # Choose a random road tile as destination
+                x, y = random.choice(road_tiles)
 
-            # Create temporary collision matrix that includes other citizens
-            temp_collision_matrix = [row[:] for row in self.world.collision_matrix]
+                # Create temporary collision matrix that includes other citizens
+                temp_collision_matrix = [row[:] for row in self.world.collision_matrix]
 
-            # Mark positions of all citizens as non-walkable
-            for i in range(self.world.grid_length_x):
-                for j in range(self.world.grid_length_y):
-                    if self.world.citizens[i][j] is not None:
-                        temp_collision_matrix[j][i] = 0
+                # Mark positions of all citizens as non-walkable
+                for i in range(self.world.grid_length_x):
+                    for j in range(self.world.grid_length_y):
+                        if self.world.citizens[i][j] is not None:
+                            temp_collision_matrix[j][i] = 0
 
-            # Mark all non-road tiles as non-walkable
-            for i in range(self.world.grid_length_x):
-                for j in range(self.world.grid_length_y):
-                    if self.world.roads[i][j] is None:
-                        temp_collision_matrix[j][i] = 0
+                # Mark all non-road tiles as non-walkable
+                for i in range(self.world.grid_length_x):
+                    for j in range(self.world.grid_length_y):
+                        if self.world.roads[i][j] is None:
+                            temp_collision_matrix[j][i] = 0
 
-            # Exception for current citizen's position
-            current_pos = self.tile["grid"]
-            temp_collision_matrix[current_pos[1]][current_pos[0]] = 1
+                # Exception for current citizen's position
+                current_pos = self.tile["grid"]
+                temp_collision_matrix[current_pos[1]][current_pos[0]] = 1
 
-            self.grid = Grid(matrix=temp_collision_matrix)
-            self.start = self.grid.node(self.tile["grid"][0], self.tile["grid"][1])
-            self.end = self.grid.node(x, y)
-            finder = AStarFinder(diagonal_movement=DiagonalMovement.never)
-            path, runs = finder.find_path(self.start, self.end, self.grid)
+                self.grid = Grid(matrix=temp_collision_matrix)
+                self.start = self.grid.node(self.tile["grid"][0], self.tile["grid"][1])
+                self.end = self.grid.node(x, y)
+                finder = AStarFinder(diagonal_movement=DiagonalMovement.never)
+                path, runs = finder.find_path(self.start, self.end, self.grid)
 
-            if len(path) > 0:
-                self.path_index = 0
-                self.path = path
-                return
+                if len(path) > 0:
+                    self.path_index = 0
+                    self.path = path
+                    return
 
-            attempts += 1
-
-        # If no path is found after max attempts, stay in place
-        self.grid = Grid(matrix=self.world.collision_matrix)
-        self.path = [self.grid.node(self.tile["grid"][0], self.tile["grid"][1])]
-        self.path_index = 0
+                attempts += 1
+            # If no path is found after max attempts, stay in place
+            self.grid = Grid(matrix=self.world.collision_matrix)
+            self.path = [self.grid.node(self.tile["grid"][0], self.tile["grid"][1])]
+            self.path_index = 0
 
     def change_tile(self, new_tile):
         # Remove citizen from current tile
