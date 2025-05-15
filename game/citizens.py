@@ -15,8 +15,14 @@ class Citizen:
         self.start_road_tile = start_road_tile
         self.tile = start_road_tile  # Current tile the citizen is on
 
-        # hour timer
-        self.last_hour_checked = -1  # To track hour changes
+        # pathfinding
+        self.move_timer = pg.time.get_ticks()
+
+        # Movement interpolation
+        self.movement_speed = 0.1  # Adjust this to control movement speed
+        self.current_pos = pg.Vector2(tile["render_pos"][0], tile["render_pos"][1])
+        self.target_pos = pg.Vector2(tile["render_pos"][0], tile["render_pos"][1])
+        self.is_moving = False
 
         # Initialize a placeholder grid for the initial path creation
         self.grid = Grid(matrix=self.world.collision_matrix)
@@ -38,15 +44,7 @@ class Citizen:
         self.in_Building = True
         self.wandering = False
 
-        # Add citizen to the current tile's list
-        self.world.citizens[start_road_tile["grid"][0]][start_road_tile["grid"][1]].append(self)
-        self.go_home()
-
-    def cleanup(self):
-        """Clean up citizen data when removed from the world"""
-        # Decrement worker count at workplace if employed
-        if self.workplace is not None:
-            self.workplace.worker_count = max(0, self.workplace.worker_count - 1) # bounded to 0
+        self.create_path()
 
         # Remove from current tile's citizen list
         if self.tile and "grid" in self.tile:
@@ -68,6 +66,10 @@ class Citizen:
         if building is not None and building.name == "residential_building" and building.adjacent_road:
             self.home_grid_pos = building.adjacent_road
             return
+
+        # Fallback: set the home grid position to the same as current position
+        # This ensures citizen at least has somewhere to go
+        self.home_grid_pos = self.tile["grid"]
 
     def find_workplace(self):
         """Find a factory to work at, prioritizing factories with the lowest worker count"""
@@ -94,12 +96,27 @@ class Citizen:
             self.workplace_road_pos = None
 
     def go_to_work(self):
-        """Send the citizen to their workplace"""
-        self.create_path(self.workplace_road_pos)
+        """Send citizen to workplace"""
+        if self.workplace_grid_pos:
+            # Clear any existing path
+            self.in_Building = False
+            self.path = None
+            self.path_index = 0
+            self.destination_tile = None
+
+            # Set workplace as new destination
+            self.set_destination(self.workplace_grid_pos)
+            return True
+        return False
 
     def go_home(self):
-        """Send the citizen back to their home"""
-        self.create_path(self.home_road_pos)
+        """Send citizen back home"""
+        if self.home_grid_pos:
+            # Clear any existing path
+            self.in_Building = False
+            self.path = None
+            self.path_index = 0
+            self.destination_tile = None
 
     def wander_randomly(self):
         """Make the citizen wander randomly with no specific destination"""
@@ -167,24 +184,19 @@ class Citizen:
         # Get current position before removing
         current_grid_pos = self.tile["grid"]
 
-        # Remove citizen from current tile
-        if self in self.world.citizens[current_grid_pos[0]][current_grid_pos[1]]:
-            self.world.citizens[current_grid_pos[0]][current_grid_pos[1]].remove(self)
+        # Remove citizen from current tile temporarily
+        self.world.citizens[current_grid_pos[0]][current_grid_pos[1]] = None
 
-        # Validate new tile coordinates are within bounds
-        if (0 <= new_tile[0] < self.world.grid_length_x and
-            0 <= new_tile[1] < self.world.grid_length_y and
-            self.world.roads[new_tile[0]][new_tile[1]] is not None):
+        # Check if the new tile is valid and not occupied
+        if self.world.roads[new_tile[0]][new_tile[1]] is not None:
             # Valid move - update citizen position
-            self.world.citizens[new_tile[0]][new_tile[1]].append(self)
+            self.world.citizens[new_tile[0]][new_tile[1]] = self
             self.tile = self.world.world[new_tile[0]][new_tile[1]]
             self.is_moving = True
         else:
-            # If tile has no road or is out of bounds, stay in current tile
-            self.world.citizens[self.tile["grid"][0]][self.tile["grid"][1]].append(self)
-            # Create a new path since the current one is invalid
-            self.path = None
-            self.create_path(None)
+            # If tile is occupied or has no road, stay in current tile
+            self.world.citizens[self.tile["grid"][0]][self.tile["grid"][1]] = self
+            self.create_path()  # Find a new path
 
     def update(self):
         # citizen movement logic
@@ -230,28 +242,141 @@ class Citizen:
                     # head to work and stay there
                     print("DEBUG: Citizen is going to work")
                     self.find_workplace()
-                    if self.workplace is not None: # check if finding the workplace was successful
-                        self.at_work = False
-                        self.at_home = False
-                        self.wandering = False
-                        self.go_to_work()
-                    else:
-                        print("DEBUG: Citizen couldn't find workplace, wandering instead")
-                        self.at_work = False
-                        self.at_home = False
-                        self.wandering = True
-                        self.wander_randomly()
-                case 16:
-                    # wander randomly
-                    print("DEBUG: Citizen leaving work, wandering randomly")
-                    self.at_work = False
-                    self.at_home = False
-                    self.wandering = True
-                    self.wander_randomly()
-                case 20:
-                    # go home for the night and stay there
-                    print("DEBUG: Citizen going home for the night")
-                    self.at_work = False
-                    self.at_home = False
-                    self.wandering = False
-                    self.go_home()
+                if self.workplace_grid_pos:
+                    self.at_work = False  # Not yet at work, but going there
+                    self.go_to_work()
+
+            # 8:00 AM to 4:00 PM - At work
+            elif game_time >= 8 and game_time < 16:
+                # If at workplace, stay
+                if self.workplace_grid_pos and self.tile["grid"][0] == self.workplace_grid_pos[0] and self.tile["grid"][1] == self.workplace_grid_pos[1]:
+                    self.at_work = True
+                    # Clear destination to prevent leaving work
+                    self.destination_tile = None
+                    self.path = None
+
+                # If not at workplace or going there, send to work
+                elif self.workplace_grid_pos and not self.at_work:
+                    # Force going to work regardless of current path
+                    self.go_to_work()
+
+            # 16:00 (4:00 PM) - End work day, start wandering
+            elif game_time == 16:
+                self.at_work = False
+                self.in_Building = False
+                # Just let the citizen wander by not setting a specific destination
+                self.destination_tile = None
+                self.path = None
+                self.wander_randomly()
+
+            # 20:00 (8:00 PM) - Head home for the night
+            elif game_time == 20:
+                # Force going home regardless of current activity
+                if self.go_home():
+                    # Set at_home flag to keep them at home
+                    self.at_home = True
+                    # Clear any other destination
+                    self.destination_tile = self.home_grid_pos
+
+            # 7:00 AM - Allow leaving home
+            elif game_time == 7:
+                # Reset at_home flag so they can leave
+                self.at_home = False
+
+        # Handle movement interpolation
+        if self.is_moving:
+            direction = self.target_pos - self.current_pos
+            if direction.length() > 1:  # If not close enough to target
+                direction = direction.normalize()
+                self.current_pos += direction * self.movement_speed * self.world.clock.get_time()
+            else:
+                self.current_pos = self.target_pos.copy()
+                self.is_moving = False
+
+        if now - self.move_timer > 500 and not self.is_moving:
+            # Don't move if at work during work hours or at home during night hours
+            work_hours = game_time >= 8 and game_time < 16
+            night_hours = game_time >= 20 or game_time < 7
+
+            at_workplace = (self.workplace_grid_pos and
+                            self.tile["grid"][0] == self.workplace_grid_pos[0] and
+                            self.tile["grid"][1] == self.workplace_grid_pos[1])
+
+            at_home = (self.home_grid_pos and
+                        self.tile["grid"][0] == self.home_grid_pos[0] and
+                        self.tile["grid"][1] == self.home_grid_pos[1])
+
+            # Force stay at workplace during work hours
+            if at_workplace and work_hours:
+                self.at_work = True
+                self.move_timer = now
+                self.destination_tile = None
+                self.path = None
+                return
+
+            # Force stay at home during night hours
+            if at_home and night_hours:
+                self.at_home = True
+                self.move_timer = now
+                self.destination_tile = None
+                self.path = None
+                return
+
+            # If it's night time and not at home, force going home
+            elif night_hours and not at_home and not self.destination_tile == self.home_grid_pos:
+                self.go_home()
+                return
+
+            # Check if we have a valid path and haven't reached the end
+            if self.path and self.path_index < len(self.path):
+                node = self.path[self.path_index]
+                new_pos = [node.x, node.y]
+
+                # Only move if the destination has a road
+                if self.world.roads[new_pos[0]][new_pos[1]] is not None:
+                    self.change_tile(new_pos)
+                    self.path_index += 1
+
+                    # Create new path when reaching destination
+                    if self.path_index >= len(self.path):
+                        # Check if we were heading to a specific destination
+                        if self.destination_tile:
+                            # We've reached our destination
+                            dest_x, dest_y = self.destination_tile
+                            reached_destination = self.tile["grid"][0] == dest_x and self.tile["grid"][1] == dest_y
+
+                            # Clear the destination now that we've reached it
+                            self.destination_tile = None
+                            self.in_Building = True
+                            # Special case for workplace during work hours
+                            if reached_destination and self.workplace_grid_pos:
+                                at_workplace = (self.tile["grid"][0] == self.workplace_grid_pos[0] and
+                                               self.tile["grid"][1] == self.workplace_grid_pos[1])
+
+                                if at_workplace and hasattr(self.world.hud, 'game_time'):
+                                    work_hours = self.world.hud.game_time >= 8 and self.world.hud.game_time < 16
+                                    if work_hours:
+                                        self.at_work = True
+                                        self.move_timer = now
+                                        return
+
+                            # Special case for arriving home
+                            if reached_destination and self.home_grid_pos:
+                                at_home = (self.tile["grid"][0] == self.home_grid_pos[0] and
+                                          self.tile["grid"][1] == self.home_grid_pos[1])
+
+                                if at_home:
+                                    # Check if it's night time
+                                    if game_time >= 20 or game_time < 7:
+                                        # At home during night hours - stay home until morning
+                                        self.at_home = True
+                                        return
+
+                        # Create a new random path if not at work and not at home during night
+                        if not self.at_work and not self.at_home:
+                            self.create_path()
+                else:
+                    # If destination has no road, find new path
+                    self.create_path()
+
+                self.move_timer = now

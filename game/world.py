@@ -1,6 +1,5 @@
 import pygame as pg
 import random
-import math
 import perlin_noise as noise
 from .settings import TILE_SIZE, ELECTRICITY_MULTIPLIER, MOISTURE_MULTIPLIER
 from .buildings import Residential_Building, Factory, Solar_Panels, Water_Treatment_Plant
@@ -39,7 +38,7 @@ class World:
 
         # grid maps of objects
         self.buildings = [[None for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
-        self.citizens = [[[] for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
+        self.citizens = [[None for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
         self.roads = [[None for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
         # List to track residential buildings and factories for citizen pathing
         self.residential_buildings = []
@@ -313,10 +312,10 @@ class World:
                                 outer_angle = ((i - 8) * 2 * 3.14159) / min(len(citizens_on_tile) - 8, 12)
                                 x_offset = int(outer_radius * math.cos(outer_angle))
                                 y_offset = int(outer_radius * math.sin(outer_angle))
-                        current_x, current_y = citizen.tile["grid"]
+
                         screen.blit(citizen.image,
-                                   (current_x + self.grass_tiles.get_width()/2 + camera.scroll.x + x_offset,
-                                    current_y - (citizen.image.get_height() - 1.5 * TILE_SIZE) + camera.scroll.y + y_offset))
+                                   (citizen.current_x + self.grass_tiles.get_width()/2 + camera.scroll.x + x_offset,
+                                    citizen.current_y - (citizen.image.get_height() - 1.5 * TILE_SIZE) + camera.scroll.y + y_offset))
 
                 # Draw red polygon around the tile in delete mode
                 if self.hud.delete_mode:
