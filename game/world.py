@@ -1,5 +1,6 @@
 import pygame as pg
 import random
+import math
 import perlin_noise as noise
 from .settings import TILE_SIZE, ELECTRICITY_MULTIPLIER, MOISTURE_MULTIPLIER
 from .buildings import Residential_Building, Factory, Solar_Panels, Water_Treatment_Plant
@@ -38,7 +39,7 @@ class World:
 
         # grid maps of objects
         self.buildings = [[None for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
-        self.citizens = [[None for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
+        self.citizens = [[[] for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
         self.roads = [[None for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
         # List to track residential buildings and factories for citizen pathing
         self.residential_buildings = []
@@ -210,21 +211,10 @@ class World:
             if self.can_place_tile(grid_pos):
                 building = self.buildings[grid_pos[0]][grid_pos[1]]
                 if building is not None:
-                    # If a factory is being demolished, its workers need to find new jobs
-                    if building.name == "factory" and hasattr(building, 'worker_count') and building.worker_count > 0:
-                        # Find all citizens that might be working here
-                        for entity in self.entities:
-                            if hasattr(entity, 'workplace') and entity.workplace == building:
-                                # Reset this citizen's workplace and make them find a new one
-                                entity.workplace = None
-                                entity.workplace_road_pos = None
-                                entity.find_workplace()
-
                     # Remove building
                     self.click_sound.play()
                     self.entities.remove(building)
                     self.buildings[grid_pos[0]][grid_pos[1]] = None
-
                 road = self.roads[grid_pos[0]][grid_pos[1]]
                 if road is not None:
                     # Remove road
@@ -313,9 +303,17 @@ class World:
                                 x_offset = int(outer_radius * math.cos(outer_angle))
                                 y_offset = int(outer_radius * math.sin(outer_angle))
 
+                        seed = id(citizen) % 1000
+                        random.seed(seed)
+                        jitter = 2
+                        x_jitter = random.randint(-jitter, jitter)
+                        y_jitter = random.randint(-jitter, jitter)
+                        # Reset random seed after use
+                        random.seed()
+
                         screen.blit(citizen.image,
-                                   (citizen.current_x + self.grass_tiles.get_width()/2 + camera.scroll.x + x_offset,
-                                    citizen.current_y - (citizen.image.get_height() - 1.5 * TILE_SIZE) + camera.scroll.y + y_offset))
+                                   (citizen.current_pos.x + self.grass_tiles.get_width()/2 + camera.scroll.x + x_offset + x_jitter,
+                                    citizen.current_pos.y - (citizen.image.get_height() - 1.5*TILE_SIZE) + camera.scroll.y + y_offset + y_jitter))
 
                 # Draw red polygon around the tile in delete mode
                 if self.hud.delete_mode:
@@ -323,7 +321,7 @@ class World:
                     if grid_pos == (x, y):
                         iso_poly = self.world[x][y]["iso_poly"]
                         iso_poly = [(px + self.grass_tiles.get_width() / 2 + camera.scroll.x,
-                                    py + camera.scroll.y + 0.5 * TILE_SIZE) for px, py in iso_poly]
+                                    py + camera.scroll.y + 0.5*TILE_SIZE) for px, py in iso_poly]
 
                         # Create a transparent surface for the polygon
                         polygon_surface = pg.Surface(screen.get_size(), pg.SRCALPHA)
@@ -550,7 +548,7 @@ class World:
         collision_matrix = [[1 for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
         for x in range(self.grid_length_x):
             for y in range(self.grid_length_y):
-                if not self.world[x][y]["walkable"]:
+                if not self.world[x][y]["empty"]:
                     collision_matrix[y][x] = 0
 
         return collision_matrix
