@@ -100,9 +100,7 @@ class Citizen:
             self.create_path(None)
 
     def update_collision_matrix(self):
-        self.world.collision_matrix = [[1 for _ in range(self.world.grid_length_y)] for _ in range(self.world.grid_length_x)]
-        for road in self.world.roads:
-            self.world.collision_matrix[road.tile["grid"][0]][road.tile["grid"][1]] = 0
+        """updates the world collision matrix"""
 
     def create_path(self, destination):
         """Creates a path for the citizen or a random one if no destination is provided"""
@@ -170,7 +168,7 @@ class Citizen:
             self.create_path(None)
 
     def update(self):
-        # citizen movement
+        # citizen movement here
 
 
         # citizen scheduling
