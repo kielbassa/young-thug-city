@@ -40,9 +40,16 @@ class Citizen:
         self.is_moving = False  # Whether citizen is currently moving
 
         self.at_work = False
-        self.at_home = True  # Starting at home
-        self.in_Building = True
-        self.wandering = False
+        self.at_home = False
+        self.in_Building = False
+        self.destination_tile = None
+        self.last_hour_checked = -1  # To track hour changes
+
+        # Find the adjacent road to home for returning home
+        self.find_home_road()
+
+        # Find a factory to work at
+        self.find_workplace()
 
         self.create_path()
 
