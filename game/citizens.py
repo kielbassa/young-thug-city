@@ -13,6 +13,7 @@ class Citizen:
         self.name = "citizen"
         self.image = pg.transform.scale(image, (image.get_width()*2, image.get_height()*2))
         self.start_road_tile = start_road_tile
+        self.tile = start_road_tile  # Current tile the citizen is on
 
         # hour timer
         self.last_hour_checked = -1  # To track hour changes
@@ -22,13 +23,19 @@ class Citizen:
 
         # destination and home tile
         self.home_tile = home_tile
-        self.home_road_pos = start_road_tile  # grid position of home's adjacent road
+        self.home_road_pos = start_road_tile["grid"]  # grid position of home's adjacent road
         self.workplace = None
         self.workplace_road_pos = None # grid position of workplace's adjacent road
+        self.destination_tile = None  # Current destination
+
+        # Movement and state tracking
+        self.path = None  # Current path being followed
+        self.path_index = 0  # Current position in the path
+        self.is_moving = False  # Whether citizen is currently moving
 
         self.at_work = False
-        self.at_home = False
-        self.in_Building = False
+        self.at_home = True  # Starting at home
+        self.in_Building = True
         self.wandering = False
 
         # Add citizen to the current tile's list
@@ -96,8 +103,7 @@ class Citizen:
 
     def wander_randomly(self):
         """Make the citizen wander randomly with no specific destination"""
-        while self.wandering:
-            self.create_path(None)
+        self.create_path(None)
 
     def update_collision_matrix(self):
         """updates the world collision matrix"""
@@ -108,21 +114,8 @@ class Citizen:
         if destination is not None:
             # Create a path to the destination tile
 
-            # Exception for current citizen's position
-            current_pos = self.tile["grid"]
-
-            # Ensure destination is valid and has a road
+            # Get destination coordinates
             dest_x, dest_y = destination
-            if (0 <= dest_y < len(self.world.collision_matrix) and
-                0 <= dest_x < len(self.world.collision_matrix[0]) and
-                self.world.roads[dest_x][dest_y] is not None):
-                self.world.collision_matrix[dest_y][dest_x] = 1
-            else:
-                # Invalid destination - no road access
-                if destination == self.destination_tile:
-                    self.destination_tile = None
-                self.wander_randomly()
-                return
 
             # Create grid and find path
             self.grid = Grid(matrix=self.world.collision_matrix)
@@ -135,13 +128,39 @@ class Citizen:
             if path and len(path) > 1:  # Need at least start and one more node
                 self.path_index = 0
                 self.path = path
+                self.destination_tile = destination
                 return
 
             # If path to destination failed, clear destination if it's our current destination
-            if destination == self.destination_tile:
+            if hasattr(self, 'destination_tile') and destination == self.destination_tile:
                 self.destination_tile = None
         else:
-            pass
+            # create a random path to wander
+            available_roads = []
+            # Find all available roads within a certain radius
+            current_x, current_y = self.tile["grid"]
+            search_radius = 10
+
+            for x in range(max(0, current_x - search_radius), min(self.world.grid_length_x, current_x + search_radius)):
+                for y in range(max(0, current_y - search_radius), min(self.world.grid_length_y, current_y + search_radius)):
+                    if self.world.roads[x][y] is not None:
+                        available_roads.append((x, y))
+
+            if available_roads:
+                # Choose a random road to walk to
+                random_dest = random.choice(available_roads)
+
+                # Create path to the random destination
+                self.grid = Grid(matrix=self.world.collision_matrix)
+                self.start = self.grid.node(self.tile["grid"][0], self.tile["grid"][1])
+                self.end = self.grid.node(random_dest[0], random_dest[1])
+                finder = AStarFinder(diagonal_movement=DiagonalMovement.never)
+                path, runs = finder.find_path(self.start, self.end, self.grid)
+
+                if path and len(path) > 1:
+                    self.path_index = 0
+                    self.path = path
+                    self.destination_tile = random_dest
 
     def change_tile(self, new_tile):
         """Change the citizen's tile"""
@@ -168,8 +187,38 @@ class Citizen:
             self.create_path(None)
 
     def update(self):
-        # citizen movement here
+        # citizen movement logic
+        if hasattr(self, 'path') and self.path and hasattr(self, 'path_index'):
+            # If we have a valid path and haven't reached the end
+            if self.path_index < len(self.path) - 1:
+                # Get next position in path
+                next_pos = self.path[self.path_index + 1]
 
+                # Move to the next tile
+                self.change_tile(next_pos)
+
+                # Increment path index
+                self.path_index += 1
+
+                # Check if we've reached our destination
+                if self.path_index >= len(self.path) - 1:
+                    # Arrived at destination
+                    self.is_moving = False
+
+                    # Handle arrival at specific destinations
+                    if hasattr(self, 'destination_tile'):
+                        if self.destination_tile == self.workplace_road_pos:
+                            self.at_work = True
+                            self.at_home = False
+                            self.wandering = False
+                        elif self.destination_tile == self.home_road_pos:
+                            self.at_home = True
+                            self.at_work = False
+                            self.wandering = False
+
+            # If wandering and reached end of current path, create new random path
+            elif self.wandering and self.path_index >= len(self.path) - 1:
+                self.create_path(None)
 
         # citizen scheduling
         game_time = self.world.hud.game_time
@@ -178,21 +227,31 @@ class Citizen:
             self.last_hour_checked = game_time
             match game_time:
                 case 7:
-                    # head to work
+                    # head to work and stay there
                     print("DEBUG: Citizen is going to work")
                     self.find_workplace()
                     if self.workplace is not None: # check if finding the workplace was successful
+                        self.at_work = False
+                        self.at_home = False
+                        self.wandering = False
                         self.go_to_work()
                     else:
                         print("DEBUG: Citizen couldn't find workplace, wandering instead")
+                        self.at_work = False
+                        self.at_home = False
+                        self.wandering = True
                         self.wander_randomly()
                 case 16:
                     # wander randomly
                     print("DEBUG: Citizen leaving work, wandering randomly")
+                    self.at_work = False
+                    self.at_home = False
                     self.wandering = True
                     self.wander_randomly()
                 case 20:
-                    # go home for the night
+                    # go home for the night and stay there
                     print("DEBUG: Citizen going home for the night")
+                    self.at_work = False
+                    self.at_home = False
                     self.wandering = False
                     self.go_home()

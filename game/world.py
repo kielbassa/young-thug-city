@@ -313,10 +313,10 @@ class World:
                                 outer_angle = ((i - 8) * 2 * 3.14159) / min(len(citizens_on_tile) - 8, 12)
                                 x_offset = int(outer_radius * math.cos(outer_angle))
                                 y_offset = int(outer_radius * math.sin(outer_angle))
-
+                        current_x, current_y = citizen.tile["grid"]
                         screen.blit(citizen.image,
-                                   (citizen.current_pos.x + self.grass_tiles.get_width()/2 + camera.scroll.x + x_offset,
-                                    citizen.current_pos.y - (citizen.image.get_height() - 1.5*TILE_SIZE) + camera.scroll.y + y_offset))
+                                   (current_x + self.grass_tiles.get_width()/2 + camera.scroll.x + x_offset,
+                                    current_y - (citizen.image.get_height() - 1.5 * TILE_SIZE) + camera.scroll.y + y_offset))
 
                 # Draw red polygon around the tile in delete mode
                 if self.hud.delete_mode:
@@ -324,7 +324,7 @@ class World:
                     if grid_pos == (x, y):
                         iso_poly = self.world[x][y]["iso_poly"]
                         iso_poly = [(px + self.grass_tiles.get_width() / 2 + camera.scroll.x,
-                                    py + camera.scroll.y + 0.5*TILE_SIZE) for px, py in iso_poly]
+                                    py + camera.scroll.y + 0.5 * TILE_SIZE) for px, py in iso_poly]
 
                         # Create a transparent surface for the polygon
                         polygon_surface = pg.Surface(screen.get_size(), pg.SRCALPHA)
