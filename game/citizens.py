@@ -42,12 +42,26 @@ class Citizen:
         self.find_home_road()
 
         # Find a factory to work at
+        # (will increment the worker count of the chosen factory)
         self.find_workplace()
 
         # Add citizen to the current tile's list
         self.world.citizens[tile["grid"][0]][tile["grid"][1]].append(self)
 
         self.create_path()
+
+    def cleanup(self):
+        """Clean up citizen data when removed from the world"""
+        # Decrement worker count at workplace if employed
+        if self.workplace is not None:
+            self.workplace.worker_count = max(0, self.workplace.worker_count - 1)
+
+        # Remove from current tile's citizen list
+        if self.tile and "grid" in self.tile:
+            current_grid_pos = self.tile["grid"]
+            if current_grid_pos[0] < len(self.world.citizens) and current_grid_pos[1] < len(self.world.citizens[0]):
+                if self in self.world.citizens[current_grid_pos[0]][current_grid_pos[1]]:
+                    self.world.citizens[current_grid_pos[0]][current_grid_pos[1]].remove(self)
 
     def find_home_road(self):
         """Find the road adjacent to home for returning later"""
@@ -64,7 +78,7 @@ class Citizen:
             return
 
     def find_workplace(self):
-        """Find a factory to work at"""
+        """Find a factory to work at, prioritizing factories with the lowest worker count"""
         factories = []
         # Look for all factories in the world
         for x in range(self.world.grid_length_x):
@@ -72,12 +86,20 @@ class Citizen:
                 building = self.world.buildings[x][y]
                 if building is not None and building.name == "factory":
                     if building.adjacent_road:
-                        # Store factory, its position, and the adjacent road position
-                        factories.append((building, (x, y), building.adjacent_road))
+                        # Store factory, its position, the adjacent road position, and worker count
+                        factories.append((building, (x, y), building.adjacent_road, building.worker_count))
+
+        # If the citizen already has a workplace, update the previous workplace's worker count
+        if self.workplace is not None:
+            self.workplace.worker_count = max(0, self.workplace.worker_count - 1)
 
         if factories:
-            # Choose a random factory as workplace
-            self.workplace, workplace_pos, self.workplace_grid_pos = random.choice(factories)
+            # Sort factories by worker count (lowest first)
+            factories.sort(key=lambda f: f[3])
+            # Choose the factory with the lowest worker count
+            self.workplace, workplace_pos, self.workplace_grid_pos, _ = factories[0]
+            # Increment the worker count for the chosen factory
+            self.workplace.worker_count += 1
         else:
             # If no factory exists, citizen won't have a workplace
             self.workplace = None
@@ -88,8 +110,11 @@ class Citizen:
         self.create_path()
 
     def go_to_work(self):
-        """Send citizen to workplace"""
+        """Send the citizen to their workplace"""
         if self.workplace_grid_pos:
+            # Check if the workplace road is accessible
+            if not self.is_destination_accessible(self.workplace_grid_pos):
+                return False
             # Clear any existing path
             self.in_Building = False
             self.pending_in_building = False  # Clear pending flag when going to work
@@ -97,23 +122,30 @@ class Citizen:
             self.path_index = 0
             self.destination_tile = None
 
+            # Ensure the workplace worker count is updated
+            if self.workplace:
+                # Ensure this citizen is counted at their workplace
+                self.workplace.worker_count += 1
+
             # Set workplace as new destination
             self.set_destination(self.workplace_grid_pos)
             return True
         return False
 
     def go_home(self):
-        """Send citizen back home"""
+        """Send the citizen back to their home"""
         if self.home_grid_pos:
             # Clear any existing path
             self.in_Building = False
             self.pending_in_building = False  # Clear pending flag when going home
             self.path = None
             self.path_index = 0
-            # clear old destination tile
             self.destination_tile = None
 
             # Reset flags
+            if self.at_work and self.workplace:
+                # Decrement the worker count when leaving work
+                self.workplace.worker_count -= 1
             self.at_work = False
 
             # Set home as new destination
@@ -248,6 +280,46 @@ class Citizen:
             self.world.citizens[self.tile["grid"][0]][self.tile["grid"][1]].append(self)
             self.create_path()  # Find a new path
 
+    def is_destination_accessible(self, destination):
+        """Check if a destination is accessible via roads from the current position"""
+        if not destination:
+            return False
+
+        # Get current position
+        current_pos = self.tile["grid"]
+        current_x, current_y = current_pos
+        dest_x, dest_y = destination
+
+        # Check if destination is within bounds
+        if not (0 <= dest_x < self.world.grid_length_x and 0 <= dest_y < self.world.grid_length_y):
+            return False
+
+        # Check if destination has a road
+        if self.world.roads[dest_x][dest_y] is None:
+            return False
+
+        # Create temporary collision matrix allowing only roads
+        temp_collision_matrix = [row[:] for row in self.world.collision_matrix]
+        for i in range(self.world.grid_length_x):
+            for j in range(self.world.grid_length_y):
+                if self.world.roads[i][j] is None:
+                    temp_collision_matrix[j][i] = 0
+
+        # Make sure current position and destination are walkable
+        temp_collision_matrix[current_y][current_x] = 1
+        temp_collision_matrix[dest_y][dest_x] = 1
+
+        # Try to find a path
+        grid = Grid(matrix=temp_collision_matrix)
+        start = grid.node(current_x, current_y)
+        end = grid.node(dest_x, dest_y)
+        finder = AStarFinder(diagonal_movement=DiagonalMovement.never)
+        path, runs = finder.find_path(start, end, grid)
+
+        # Path is valid if it contains more than just the starting position
+        return len(path) > 1
+
+
     def update(self):
         now = pg.time.get_ticks()
         game_time = self.world.hud.game_time
@@ -279,6 +351,10 @@ class Citizen:
 
             # 16:00 (4:00 PM) - End work day, start wandering
             elif game_time == 16:
+                # If at work, decrement the worker count
+                if self.at_work and self.workplace:
+                    self.workplace.worker_count = max(0, self.workplace.worker_count - 1)
+
                 self.at_work = False
                 self.in_Building = False
                 self.pending_in_building = False  # Clear pending flag at end of work day

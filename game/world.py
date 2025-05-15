@@ -211,6 +211,15 @@ class World:
             if self.can_place_tile(grid_pos):
                 building = self.buildings[grid_pos[0]][grid_pos[1]]
                 if building is not None:
+                    # If a factory is being demolished, its workers need to find new jobs
+                    if building.name == "factory" and hasattr(building, 'worker_count') and building.worker_count > 0:
+                        # Find all citizens that might be working here
+                        for entity in self.entities:
+                            if hasattr(entity, 'workplace') and entity.workplace == building:
+                                # Reset this citizen's workplace and make them find a new one
+                                entity.workplace = None
+                                entity.workplace_grid_pos = None
+                                entity.find_workplace()
                     # Remove building
                     self.click_sound.play()
                     self.entities.remove(building)
@@ -303,17 +312,9 @@ class World:
                                 x_offset = int(outer_radius * math.cos(outer_angle))
                                 y_offset = int(outer_radius * math.sin(outer_angle))
 
-                        seed = id(citizen) % 1000
-                        random.seed(seed)
-                        jitter = 2
-                        x_jitter = random.randint(-jitter, jitter)
-                        y_jitter = random.randint(-jitter, jitter)
-                        # Reset random seed after use
-                        random.seed()
-
                         screen.blit(citizen.image,
-                                   (citizen.current_pos.x + self.grass_tiles.get_width()/2 + camera.scroll.x + x_offset + x_jitter,
-                                    citizen.current_pos.y - (citizen.image.get_height() - 1.5*TILE_SIZE) + camera.scroll.y + y_offset + y_jitter))
+                                   (citizen.current_pos.x + self.grass_tiles.get_width()/2 + camera.scroll.x + x_offset,
+                                    citizen.current_pos.y - (citizen.image.get_height() - 1.5*TILE_SIZE) + camera.scroll.y + y_offset))
 
                 # Draw red polygon around the tile in delete mode
                 if self.hud.delete_mode:
