@@ -69,6 +69,9 @@ class Factory(Buildings):
         self.rect = self.image.get_rect(topleft=pos)
         self.resource_manager = resource_manager
         self.resource_manager.apply_cost_to_resource(self.name)
+        
+        # Track number of workers at this factory
+        self.worker_count = 0
 
         # Cooldowns for resource generation and consumption
         self.production_cooldown = pg.time.get_ticks()
