@@ -2,6 +2,7 @@ import pygame as pg
 
 class Road:
     def __init__(self, pos, resource_manager=None):
+        self.pos = pos
         self.name = "road"
         self.tiles = self.load_images()
         self.image = self.tiles["straight_13"]  # Default texture
