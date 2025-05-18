@@ -13,7 +13,7 @@ def main():
     pg.display.set_icon(pygame_icon)
 
     pg.display.set_caption("Young Thug City")
-    screen = pg.display.set_mode((1024, 768),)
+    screen = pg.display.set_mode((1920, 1080), pg.FULLSCREEN)
     clock = pg.time.Clock()
 
     # menus
