@@ -6,8 +6,8 @@ class Buildings:
         self.description = {
             "factory": "A factory that employs citizens and produces thugoleons.",
             "residential_building": "A residential building that provides housing for citizens.",
-            "solar_panels": "Solar panels that generate electricity.",
-            "water_treatment_plant": "A water treatment plant that pumps, cleans and purifies water.",
+            "solar_panels": "Solar panels that generate electricity. Best to place on high altitude",
+            "water_treatment_plant": "A water treatment plant that pumps, cleans and purifies water. Can only be placed on mud",
         }
 
         self.consumption = {

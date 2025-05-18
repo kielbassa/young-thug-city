@@ -353,7 +353,7 @@ class World:
         sunset_end = 21     # 8:00 PM
 
         # Create a surface for the tint overlay
-        tint_overlay = pg.Surface((screen.get_width(), screen.get_height()), pg.SRCALPHA)
+        tint_overlay = pg.Surface((screen.get_width(), screen.get_height()), pg.SRCALPHA).convert_alpha()
 
         # Apply blue night tint if time is between sunset_end and sunrise_start
         if game_time >= sunset_end or game_time < sunrise_start:
