@@ -293,11 +293,11 @@ class World:
                 # draw citizens
                 citizens_on_tile = self.citizens[x][y]
                 for i, citizen in enumerate(citizens_on_tile):
-                    # Add a small offset for each citizen to make them visible
+                    # Add a small offset for each citizen
                     x_offset = 0
                     y_offset = 0
 
-                    if len(citizens_on_tile) >= 1 and not citizen.in_building:
+                    if len(citizens_on_tile) >= 1 and citizen.is_visible:
                         # Create a circular pattern around the center point
                         radius = 12  # Radius of the circle
                         angle = (i * 2 * 3.14159) / min(len(citizens_on_tile), 8)  # Distribute evenly around the circle

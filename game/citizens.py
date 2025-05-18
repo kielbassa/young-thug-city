@@ -34,7 +34,7 @@ class Citizen:
         self.workplace_grid_pos = None
         self.at_work = False
         self.at_home = True
-        self.in_building = True
+        self.is_visible = False
         self.wandering = False
 
         # movement and schedule timers
@@ -132,7 +132,7 @@ class Citizen:
     def schedule(self, game_time):
         match game_time:
             case 7: # at 7 go to work
-                self.in_building = False # make the citizen visible
+                self.is_visible = True # make the citizen visible
                 self.wandering = False
                 self.find_workplace()
                 if self.workplace:
@@ -142,7 +142,7 @@ class Citizen:
                     print(f"{self.name}, Workplace not found")
                     self.create_path(None)
             case 16: # at 16 leave work and start wandering around
-                self.in_building = False # make the citizen visible
+                self.is_visible = True # make the citizen visible
                 self.wandering = True # set the wandering flag to True
                 self.create_path(None) # create a path with no destination
             case 20: # at 20 go home
@@ -160,7 +160,6 @@ class Citizen:
 
         # Handle movement interpolation
         if self.is_moving:
-            self.in_building = False
             direction = self.target_pos - self.current_pos
             if direction.length() > 1:  # If not close enough to target
                 direction = direction.normalize()
@@ -189,5 +188,5 @@ class Citizen:
             if self.path_index == len(self.path):
                 if self.wandering: # if the citizen is wandering, create a new random path
                     self.create_path(None)
-                else:
-                    self.in_building = True
+                elif not self.is_moving:
+                    self.is_visible = False
