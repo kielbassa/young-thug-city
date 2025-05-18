@@ -8,7 +8,9 @@ class Citizen:
     def __init__(self, tile, world):
         """Initialize a citizen object."""
         self.world = world
-        image = pg.image.load("assets/graphics/citizen.png").convert_alpha()
+
+        #randomize which out of 5 images to use
+        image = pg.image.load(f"assets/graphics/citizen{random.randint(1, 5)}.png").convert_alpha()
         self.name = f"citizen_{random.randint(1, 1000)}"
         self.image = pg.transform.scale(image, (image.get_width()*2, image.get_height()*2))
         self.tile = tile
