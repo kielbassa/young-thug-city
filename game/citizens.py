@@ -160,6 +160,7 @@ class Citizen:
 
         # Handle movement interpolation
         if self.is_moving:
+            self.in_building = False
             direction = self.target_pos - self.current_pos
             if direction.length() > 1:  # If not close enough to target
                 direction = direction.normalize()
@@ -177,17 +178,16 @@ class Citizen:
                 # Only move if the destination has a road
                 if self.world.roads[new_pos[0]][new_pos[1]] is not None:
                     self.change_tile(new_pos)
+                    print(f"Path of length {len(self.path)}, done {self.path_index}")
                     self.path_index += 1
-
-                    # Create new path when reaching destination
-                    if self.path_index >= len(self.path):
-
-                        if self.wandering: # if the citizen is wandering, create a new random path
-                            self.create_path(None)
-                        else:
-                            self.in_building = True
                 else:
                     # If destination has no road, find new path
                     self.create_path(None)
-
                 self.move_timer = now
+
+            # Reaching destination
+            if self.path_index == len(self.path):
+                if self.wandering: # if the citizen is wandering, create a new random path
+                    self.create_path(None)
+                else:
+                    self.in_building = True

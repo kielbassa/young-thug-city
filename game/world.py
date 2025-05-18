@@ -297,7 +297,7 @@ class World:
                     x_offset = 0
                     y_offset = 0
 
-                    if len(citizens_on_tile) >= 1:
+                    if len(citizens_on_tile) >= 1 and not citizen.in_building:
                         # Create a circular pattern around the center point
                         radius = 12  # Radius of the circle
                         angle = (i * 2 * 3.14159) / min(len(citizens_on_tile), 8)  # Distribute evenly around the circle
