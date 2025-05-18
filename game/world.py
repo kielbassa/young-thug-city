@@ -39,10 +39,9 @@ class World:
 
         # grid maps of objects
         self.buildings = [[None for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
-
         self.roads = [[None for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
-        # List to track residential buildings and factories for citizen pathing
-        self.residential_buildings = []
+        # citizen list for every grid tile
+        self.citizens = [[[] for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
 
         # tile variables for hud
         self.temp_tile = None
@@ -51,8 +50,6 @@ class World:
         # sounds
         self.click_sound = pg.mixer.Sound('assets/audio/click.wav')
 
-        # citizen list for every grid tile
-        self.citizens = [[[] for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
 
     def update_road_textures(self, grid_pos):
         """ Update the texture of the road at the given position and its neighbors"""
