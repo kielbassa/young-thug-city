@@ -8,6 +8,7 @@ class Citizen:
     def __init__(self, tile, world):
         """Initialize a citizen object."""
         self.world = world
+        self.world.entities.append(self) # add itself to entities for updating
 
         #randomize which out of 5 images to use
         image = pg.image.load(f"assets/graphics/citizen{random.randint(1, 5)}.png").convert_alpha()
@@ -38,6 +39,8 @@ class Citizen:
         # movement and schedule timers
         self.move_timer = pg.time.get_ticks()
         self.last_hour_checked = - 1
+
+        self.create_path(None)
 
     def find_workplace(self):
         """Find a factory to work at, prioritizing factories with the lowest worker count"""
@@ -127,13 +130,15 @@ class Citizen:
         if self.world.roads[new_tile[0]][new_tile[1]] is not None:
             self.world.citizens[current_grid_pos[0]][current_grid_pos[1]] = None # remove citizen from current grid
             self.is_moving = True
+            if self.world.citizens[new_tile[0]][new_tile[1]] is None:
+                self.world.citizens[new_tile[0]][new_tile[1]] = []
             self.world.citizens[new_tile[0]][new_tile[1]].append(self)
             self.tile = self.world.world[new_tile[0]][new_tile[1]]
             self.target_pos = pg.Vector2(self.tile["render_pos"][0], self.tile["render_pos"][1])
-            print("Citizen moved to new tile :", self.name)
+            print(f"{self.name} moved to new tile : {current_grid_pos}->{new_tile}")
         else:
             print(f"{self.name} couldn't move to new tile, created a new path instead")
-            self.create_path(None)  # Find a new path
+            self.create_path(new_tile)  # If going to the next tile fails, find a path there
 
     def schedule(self, game_time):
         match game_time:
@@ -141,7 +146,8 @@ class Citizen:
                 self.find_workplace()
                 if self.workplace:
                     print("Workplace found, creating path")
-                    self.create_path(self.workplace_grid_pos)
+                    # self.create_path(self.workplace_grid_pos)
+                    pass
                 else:
                     print(f"{self.name}, Workplace not found")
                     self.create_path(None)
