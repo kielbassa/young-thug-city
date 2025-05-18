@@ -77,18 +77,16 @@ class Citizen:
         else:
             max_attempts = 50
             attempts = 0
-
             while attempts < max_attempts:
                 # find road tiles
                 road_tiles = []
                 for i in range(self.world.grid_length_x):
                     for j in range(self.world.grid_length_y):
-                        # Check if tile has a road on it and is not occupied by another citizen
-                        if self.world.roads[i][j] is not None and self.world.citizens[i][j] is None:
+                        # Check if tile has a road on it
+                        if self.world.roads[i][j] is not None:
                             road_tiles.append((i, j))
-
                 # If no road tiles are available, stay in place
-                if not road_tiles:
+                if road_tiles is None:
                     break
 
                 # Choose a random road tile as destination
@@ -128,7 +126,7 @@ class Citizen:
         current_grid_pos = self.tile["grid"]
         # Remove citizen from current tile
         if self.world.roads[new_tile[0]][new_tile[1]] is not None:
-            self.world.citizens[current_grid_pos[0]][current_grid_pos[1]] = None # remove citizen from current grid
+            self.world.citizens[current_grid_pos[0]][current_grid_pos[1]].remove(self) # remove citizen from current grid
             self.is_moving = True
             if self.world.citizens[new_tile[0]][new_tile[1]] is None:
                 self.world.citizens[new_tile[0]][new_tile[1]] = []
