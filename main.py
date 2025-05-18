@@ -9,8 +9,11 @@ def main():
     pg.init()
     pg.mixer.init()
 
+    pygame_icon = pg.image.load('assets/graphics/icon.png')
+    pg.display.set_icon(pygame_icon)
+
     pg.display.set_caption("Young Thug City")
-    screen = pg.display.set_mode((1920, 1080), pg.FULLSCREEN)
+    screen = pg.display.set_mode((1024, 768),)
     clock = pg.time.Clock()
 
     # menus
