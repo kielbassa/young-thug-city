@@ -15,7 +15,6 @@ class Citizen:
 
         # pathfinding
         self.world.citizens[tile["grid"][0]][tile["grid"][1]].append(self)
-        self.move_timer = pg.time.get_ticks()
 
         # Movement interpolation
         self.movement_speed = 0.1  # Adjust this to control movement speed
@@ -26,7 +25,17 @@ class Citizen:
         # Initialize a placeholder grid for the initial path creation
         self.grid = Grid(matrix=self.world.collision_matrix)
 
+        # initialize schedule variables
+        self.home_grid_pos = tile["grid"]
+        self.workplace = None
+        self.workplace_grid_pos = None
+        self.at_work = False
+        self.at_home = True
         self.in_Building = False
+
+        # movement and schedule timers
+        self.move_timer = pg.time.get_ticks()
+        self.last_hour_checked = - 1
 
     def create_path(self, destination):
         if destination is not None:
@@ -83,9 +92,10 @@ class Citizen:
             self.path_index = 0
 
     def change_tile(self, new_tile):
+        current_grid_pos = self.tile["grid"]
         # Remove citizen from current tile
-        if (self.world.roads[new_tile[0]][new_tile[1]] is not None):
-            self.world.citizens[self.tile["grid"][0]][self.tile["grid"][1]] = None
+        if self.world.roads[new_tile[0]][new_tile[1]] is not None:
+            self.world.citizens[current_grid_pos[0]][current_grid_pos[1]] = None # remove citizen from current grid
             self.is_moving = True
             self.world.citizens[new_tile[0]][new_tile[1]].append(self)
             self.tile = self.world.world[new_tile[0]][new_tile[1]]
@@ -95,8 +105,23 @@ class Citizen:
             print("Citizen couldn't move to new tile, created a new path instead")
             self.create_path(None)  # Find a new path
 
+    def schedule(self, game_time):
+        match game_time:
+            case 7: # at 7 go to work
+                pass
+            case 16: # at 16 leave work and start wandering around
+                pass
+            case 20: # at 20 go home
+                pass
+
     def update(self):
         now = pg.time.get_ticks()
+        game_time = self.world.hud.game_time
+
+        # only process schedule when the hour changes
+        if game_time != self.last_hour_checked:
+            self.last_hour_checked = game_time
+            self.schedule(game_time)
 
         # Handle movement interpolation
         if self.is_moving:
