@@ -31,28 +31,43 @@ class Citizen:
         self.workplace_grid_pos = None
         self.at_work = False
         self.at_home = True
-        self.in_Building = False
+        self.in_Building = True
 
         # movement and schedule timers
         self.move_timer = pg.time.get_ticks()
         self.last_hour_checked = - 1
 
     def find_workplace(self):
-            """Find a factory to work at, prioritizing factories with the lowest worker count"""
-            factories = []
-            # Look for all factories in the world
-            for x in range(self.world.grid_length_x):
-                for y in range(self.world.grid_length_y):
-                    building = self.world.buildings[x][y]
-                    if building is not None and building.name == "factory":
-                        if building.adjacent_road:
-                            # Store factory, its position, the adjacent road position, and worker count
-                            factories.append((building, (x, y), building.adjacent_road, building.worker_count))
+        """Find a factory to work at, prioritizing factories with the lowest worker count"""
+        factories = []
+        # Look for all factories in the world
+        for x in range(self.world.grid_length_x):
+            for y in range(self.world.grid_length_y):
+                building = self.world.buildings[x][y]
+                if building is not None and building.name == "factory":
+                    if building.adjacent_road:
+                        # Store factory, its position, the adjacent road position, and worker count
+                        factories.append((building, (x, y), building.adjacent_road, building.worker_count))
+
+        # If the citizen already has a workplace, update the previous workplace's worker count
+        if self.workplace is not None:
+            self.workplace.worker_count = max(0, self.workplace.worker_count - 1)
+
+        if factories:
+            # Sort factories by worker count (lowest first)
+            factories.sort(key=lambda f: f[3])
+            # Choose the factory with the lowest worker count
+            self.workplace, workplace_pos, self.workplace_grid_pos, _ = factories[0]
+            self.workplace.worker_count += 1
+        else:
+            # If no factory exists, citizen won't have a workplace
+            self.workplace = None
+            self.workplace_grid_pos = None
 
     def create_path(self, destination):
         """Create a path to the destination tile or a random one if no destination is set"""
         if destination is not None:
-            # if the citizen has a destination, create a path to the adjecent road tile
+            # if the citizen has a destination, create a path to the road tile
             pass
         else:
             max_attempts = 50
@@ -115,13 +130,19 @@ class Citizen:
             self.target_pos = pg.Vector2(self.tile["render_pos"][0], self.tile["render_pos"][1])
             print("Citizen moved to new tile :", self.name)
         else:
-            print("Citizen couldn't move to new tile, created a new path instead")
+            print(f"{self.name} couldn't move to new tile, created a new path instead")
             self.create_path(None)  # Find a new path
 
     def schedule(self, game_time):
         match game_time:
             case 7: # at 7 go to work
-                self.create_path(None)
+                self.find_workplace()
+                if self.workplace:
+                    print("Workplace found, creating path")
+                    self.create_path(self.workplace_grid_pos)
+                else:
+                    print(f"{self.name}, Workplace not found")
+                    self.create_path(None)
             case 16: # at 16 leave work and start wandering around
                 self.create_path(None)
             case 20: # at 20 go home
@@ -142,7 +163,7 @@ class Citizen:
             if direction.length() > 1:  # If not close enough to target
                 direction = direction.normalize()
                 self.current_pos += direction * self.movement_speed * self.world.clock.get_time()
-            else:
+            else: # don't move
                 self.current_pos = self.target_pos.copy()
                 self.is_moving = False
 
