@@ -39,10 +39,9 @@ class World:
 
         # grid maps of objects
         self.buildings = [[None for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
-        self.citizens = [[[] for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
         self.roads = [[None for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
-        # List to track residential buildings and factories for citizen pathing
-        self.residential_buildings = []
+        # citizen list for every grid tile
+        self.citizens = [[[] for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
 
         # tile variables for hud
         self.temp_tile = None
@@ -50,6 +49,7 @@ class World:
 
         # sounds
         self.click_sound = pg.mixer.Sound('assets/audio/click.wav')
+
 
     def update_road_textures(self, grid_pos):
         """ Update the texture of the road at the given position and its neighbors"""
@@ -293,28 +293,27 @@ class World:
                 # draw citizens
                 citizens_on_tile = self.citizens[x][y]
                 for i, citizen in enumerate(citizens_on_tile):
-                    if not citizen.in_Building:
-                        # Add a small offset for each citizen to make them visible
-                        x_offset = 0
-                        y_offset = 0
+                    # Add a small offset for each citizen
+                    x_offset = 0
+                    y_offset = 0
 
-                        if len(citizens_on_tile) > 1:
-                            # Create a circular pattern around the center point
-                            radius = 12  # Radius of the circle
-                            angle = (i * 2 * 3.14159) / min(len(citizens_on_tile), 8)  # Distribute evenly around the circle
-                            x_offset = int(radius * math.cos(angle))
-                            y_offset = int(radius * math.sin(angle))
+                    if len(citizens_on_tile) >= 1 and citizen.is_visible:
+                        # Create a circular pattern around the center point
+                        radius = 12  # Radius of the circle
+                        angle = (i * 2 * 3.14159) / min(len(citizens_on_tile), 8)  # Distribute evenly around the circle
+                        x_offset = int(radius * math.cos(angle))
+                        y_offset = int(radius * math.sin(angle))
 
-                            # For more than 8 citizens, create an outer circle
-                            if i >= 8:
-                                outer_radius = 20
-                                outer_angle = ((i - 8) * 2 * 3.14159) / min(len(citizens_on_tile) - 8, 12)
-                                x_offset = int(outer_radius * math.cos(outer_angle))
-                                y_offset = int(outer_radius * math.sin(outer_angle))
+                        # For more than 8 citizens, create an outer circle
+                        if i >= 8:
+                            outer_radius = 20
+                            outer_angle = ((i - 8) * 2 * 3.14159) / min(len(citizens_on_tile) - 8, 12)
+                            x_offset = int(outer_radius * math.cos(outer_angle))
+                            y_offset = int(outer_radius * math.sin(outer_angle))
 
                         screen.blit(citizen.image,
-                                   (citizen.current_pos.x + self.grass_tiles.get_width()/2 + camera.scroll.x + x_offset,
-                                    citizen.current_pos.y - (citizen.image.get_height() - 1.5*TILE_SIZE) + camera.scroll.y + y_offset))
+                                (citizen.current_pos.x + self.grass_tiles.get_width()/2 + camera.scroll.x + x_offset,
+                                citizen.current_pos.y - (citizen.image.get_height() - 1.5*TILE_SIZE) + camera.scroll.y + y_offset))
 
                 # Draw red polygon around the tile in delete mode
                 if self.hud.delete_mode:

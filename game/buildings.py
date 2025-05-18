@@ -142,9 +142,7 @@ class Residential_Building(Buildings):
                 from .citizens import Citizen
                 road_tile = world.world[self.adjacent_road[0]][self.adjacent_road[1]]
                 # Pass the grid position of the residential building as home_tile
-                Citizen(road_tile, world, grid_pos)
-                # Store this building's position to help citizens identify their home
-                world.residential_buildings.append((grid_pos, self.adjacent_road))
+                Citizen(road_tile, world)
 
     def update(self):
         now = pg.time.get_ticks()
