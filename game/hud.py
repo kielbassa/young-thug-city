@@ -272,7 +272,7 @@ class Hud:
             draw_text(self.cached_select_surface, production_text, TEXT_SIZE, (100, 255, 100), (resource_x, resource_y))
             resource_y += TEXT_SIZE
 
-        if hasattr(self.examined_tile, 'worker_count'):
+        if hasattr(self.examined_tile, 'worker_count') and hasattr(self.examined_tile, 'worker_max_capacity'):
             production_text = f"Workers: {self.examined_tile.worker_count}/{self.examined_tile.worker_max_capacity}"
             draw_text(self.cached_select_surface, production_text, TEXT_SIZE, (255, 255, 255), (resource_x, resource_y))
             resource_y += TEXT_SIZE
@@ -297,11 +297,11 @@ class Hud:
 
             for word in words:
                 test_line = line + word + ' '
-                test_width = pg.font.SysFont(None, text_size).size(test_line)[0]
+                test_width = pg.font.SysFont(None, int(TEXT_SIZE)).size(test_line)[0]
 
                 if test_width > max_width:
                     draw_text(self.cached_select_surface, line, description_text_size, (255, 255, 255), (desc_x, desc_y + y_offset))
-                    y_offset += text_size
+                    y_offset += TEXT_SIZE
                     line = word + ' '
                 else:
                     line = test_line
@@ -339,7 +339,7 @@ class Hud:
         cost_text = f"Cost: {cost_info['thugoleons']} thugoleons"
 
         # Render text
-        font = pg.font.SysFont(None, 24)
+        font = pg.font.SysFont(None, int(TEXT_SIZE*0.8))
         cost_surface = font.render(cost_text, True, (255, 255, 255))
         cost_rect = cost_surface.get_rect()
         cost_rect.topleft = (mouse_pos[0] + 20, mouse_pos[1] + 20)
