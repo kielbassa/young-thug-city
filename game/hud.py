@@ -1,7 +1,7 @@
 import pygame as pg
 from .utils import draw_text
 from .buildings import Buildings
-from .settings import ELECTRICITY_MULTIPLIER, MOISTURE_MULTIPLIER, WATER_PUMP_COST_MULTIPLIER, SOLAR_PANEL_CLEANING_COST_MULTIPLIER
+from .settings import ELECTRICITY_MULTIPLIER, MOISTURE_MULTIPLIER, WATER_PUMP_COST_MULTIPLIER, SOLAR_PANEL_CLEANING_COST_MULTIPLIER, TEXT_SIZE
 
 class Hud:
     def __init__(self,resource_manager,width,height):
@@ -127,11 +127,11 @@ class Hud:
         cache_total = self.cache_hits + self.cache_misses
         if cache_total > 0:
             efficiency = (self.cache_hits / cache_total) * 100
-            draw_text(screen, f"Cache: {efficiency:.1f}% ({self.cache_hits}/{cache_total})", 20, (0, 255, 0), (15, 35))
+            draw_text(screen, f"Cache: {efficiency:.1f}% ({self.cache_hits}/{cache_total})", TEXT_SIZE * 0.75 , (0, 255, 0), (15, 35))
 
         # build hud
         screen.blit(self.build_surface, (self.building_hud_x, self.building_hud_y))
-        draw_text(screen, "Build", 30, (255, 255, 255), (self.building_hud_x + 12, self.building_hud_y + 12))
+        draw_text(screen, "Build", TEXT_SIZE, (255, 255, 255), (self.building_hud_x + 12, self.building_hud_y + 12))
 
         for tile in self.tiles:
             icon = tile["icon"].copy()
@@ -147,7 +147,7 @@ class Hud:
         pos = self.width - 950
         for resource, resource_value in self.resource_manager.resources.items():
             txt = resource + ": " + str(resource_value)
-            draw_text(screen, txt, 30, (255, 255, 255), (pos, 5))
+            draw_text(screen, txt, TEXT_SIZE, (255, 255, 255), (pos, 5))
             pos += len(txt) * 13
 
         # Draw in-game clock at the end of resources
@@ -155,7 +155,7 @@ class Hud:
             hours_str = str(self.game_time).zfill(2)
             minutes_str = "00"
             time_str = f"Time: {hours_str}:{minutes_str}"
-            draw_text(screen, time_str, 30, (255, 255, 255), (pos, 5))
+            draw_text(screen, time_str, TEXT_SIZE, (255, 255, 255), (pos, 5))
 
         # Draw building information tooltip if temp_tile exists
         if hasattr(self, 'world') and self.world.temp_tile is not None:
@@ -185,7 +185,7 @@ class Hud:
 
             # Blit the frame surface onto the screen
             screen.blit(self.frame_surface, (0, 0))
-            draw_text(screen, "Delete mode active, press the key again to deactivate", 60, (255, 0, 0),
+            draw_text(screen, "Delete mode active, press the key again to deactivate", TEXT_SIZE*2, (255, 0, 0),
                       (self.width * 0.02, self.height * 0.95))
     def draw_select_hud(self, screen):
         # Use cached surface if valid
@@ -222,63 +222,63 @@ class Hud:
         self.cached_select_surface.blit(img_scale, (85, h * 0.05 + 45))
 
         # Add building name
-        draw_text(self.cached_select_surface, self.examined_tile.name.replace('_', ' ').title(), 40, (255, 255, 255),
+        draw_text(self.cached_select_surface, self.examined_tile.name.replace('_', ' ').title(), TEXT_SIZE*1.5 , (255, 255, 255),
                 (10, 10))
 
         # Display resource production/consumption information
-        text_size = 28
+
         description_text_size = 25
         resource_y = h * 0.05 + 50
         resource_x = w * 0.5 + 50
 
         # Consumption section header
-        draw_text(self.cached_select_surface, "Consumption:", text_size, (255, 180, 180), (resource_x, resource_y))
-        resource_y += text_size
+        draw_text(self.cached_select_surface, "Consumption:", TEXT_SIZE, (255, 180, 180), (resource_x, resource_y))
+        resource_y += TEXT_SIZE
 
         # Check if the building has consumption attributes
         if hasattr(self.examined_tile, 'electricity_consumption'):
             consumption_text = f"Electricity: -{self.examined_tile.electricity_consumption}/s"
-            draw_text(self.cached_select_surface, consumption_text, text_size, (255, 100, 100), (resource_x, resource_y))
-            resource_y += text_size
+            draw_text(self.cached_select_surface, consumption_text, TEXT_SIZE, (255, 100, 100), (resource_x, resource_y))
+            resource_y += TEXT_SIZE
 
         if hasattr(self.examined_tile, 'water_consumption'):
             consumption_text = f"Water: -{self.examined_tile.water_consumption}/s"
-            draw_text(self.cached_select_surface, consumption_text, text_size, (255, 100, 100), (resource_x, resource_y))
-            resource_y += text_size
+            draw_text(self.cached_select_surface, consumption_text, TEXT_SIZE, (255, 100, 100), (resource_x, resource_y))
+            resource_y += TEXT_SIZE
 
         if hasattr(self.examined_tile, 'thugoleon_consumption'):
             consumption_text = f"Thugoleons: -{self.examined_tile.thugoleon_consumption}/s"
-            draw_text(self.cached_select_surface, consumption_text, text_size, (255, 100, 100), (resource_x, resource_y))
-            resource_y += text_size
+            draw_text(self.cached_select_surface, consumption_text, TEXT_SIZE, (255, 100, 100), (resource_x, resource_y))
+            resource_y += TEXT_SIZE
 
         # Production section
-        resource_y += text_size  # Add some spacing
-        draw_text(self.cached_select_surface, "Production:", text_size, (180, 255, 180), (resource_x, resource_y))
-        resource_y += text_size
+        resource_y += TEXT_SIZE  # Add some spacing
+        draw_text(self.cached_select_surface, "Production:", TEXT_SIZE, (180, 255, 180), (resource_x, resource_y))
+        resource_y += TEXT_SIZE
 
         # Production attributes
         if hasattr(self.examined_tile, 'thugoleon_production_rate'):
             production_text = f"Thugoleons: +{self.examined_tile.thugoleon_production_rate}/s"
-            draw_text(self.cached_select_surface, production_text, text_size, (100, 255, 100), (resource_x, resource_y))
-            resource_y += text_size
+            draw_text(self.cached_select_surface, production_text, TEXT_SIZE, (100, 255, 100), (resource_x, resource_y))
+            resource_y += TEXT_SIZE
 
         if hasattr(self.examined_tile, 'electricity_production_rate'):
             production_text = f"Electricity: +{self.examined_tile.electricity_production_rate}/s"
-            draw_text(self.cached_select_surface, production_text, text_size, (100, 255, 100), (resource_x, resource_y))
-            resource_y += text_size
+            draw_text(self.cached_select_surface, production_text, TEXT_SIZE, (100, 255, 100), (resource_x, resource_y))
+            resource_y += TEXT_SIZE
 
         if hasattr(self.examined_tile, 'water_production_rate'):
             production_text = f"Water: +{self.examined_tile.water_production_rate}/s"
-            draw_text(self.cached_select_surface, production_text, text_size, (100, 255, 100), (resource_x, resource_y))
-            resource_y += text_size
+            draw_text(self.cached_select_surface, production_text, TEXT_SIZE, (100, 255, 100), (resource_x, resource_y))
+            resource_y += TEXT_SIZE
 
         if hasattr(self.examined_tile, 'worker_count'):
             production_text = f"Workers: {self.examined_tile.worker_count}/{self.examined_tile.worker_max_capacity}"
-            draw_text(self.cached_select_surface, production_text, text_size, (255, 255, 255), (resource_x, resource_y))
-            resource_y += text_size
+            draw_text(self.cached_select_surface, production_text, TEXT_SIZE, (255, 255, 255), (resource_x, resource_y))
+            resource_y += TEXT_SIZE
             production_text = f"Current workers: {self.examined_tile.worker_count_current}"
-            draw_text(self.cached_select_surface, production_text, text_size, (255, 255, 255), (resource_x, resource_y))
-            resource_y += text_size
+            draw_text(self.cached_select_surface, production_text, TEXT_SIZE, (255, 255, 255), (resource_x, resource_y))
+            resource_y += TEXT_SIZE
 
         # Add building description if available
         if hasattr(self.world.building_attributes, 'description') and self.examined_tile.name in self.world.building_attributes.description:
@@ -308,7 +308,7 @@ class Hud:
 
             # Render the last line
             if line:
-                draw_text(self.cached_select_surface, line, text_size, (255, 255, 255), (desc_x, desc_y + y_offset))
+                draw_text(self.cached_select_surface, line, TEXT_SIZE, (255, 255, 255), (desc_x, desc_y + y_offset))
 
         # Mark cache as valid and display it
         self.select_cache_valid = True
@@ -377,7 +377,7 @@ class Hud:
             screen.blit(self.preview_surface, self.preview_rect.topleft)
 
             # Panel title
-            draw_text(screen, f"{building_name.replace('_', ' ').title()} resource preview", 30,
+            draw_text(screen, f"{building_name.replace('_', ' ').title()} resource preview", TEXT_SIZE,
                      (255, 255, 255), (self.preview_rect.x + 10, self.preview_rect.y + 10))
 
             # Calculate potential resource values

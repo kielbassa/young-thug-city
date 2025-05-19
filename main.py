@@ -1,6 +1,7 @@
 import pygame as pg
 from game.game import Game
 from game.menu import Menu
+from game.settings import HORIZONTAL_RESOLUTION, VERTICAL_RESOLUTION, FULLSCREEN
 
 def main():
     running = True
@@ -13,7 +14,7 @@ def main():
     pg.display.set_icon(pygame_icon)
 
     pg.display.set_caption("Young Thug City")
-    screen = pg.display.set_mode((1920, 1080), pg.FULLSCREEN)
+    screen = pg.display.set_mode((HORIZONTAL_RESOLUTION, VERTICAL_RESOLUTION), pg.FULLSCREEN if FULLSCREEN else 0)
     clock = pg.time.Clock()
 
     # menus
