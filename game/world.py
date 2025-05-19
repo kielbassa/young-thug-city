@@ -230,7 +230,8 @@ class World:
                     self.click_sound.play()
                     self.entities.remove(road)
                     self.roads[grid_pos[0]][grid_pos[1]] = None
-                self.world[grid_pos[0]][grid_pos[1]]["buildable"] = True
+                if self.world[grid_pos[0]][grid_pos[1]]["tile"] != "mud":
+                    self.world[grid_pos[0]][grid_pos[1]]["buildable"] = True
                 self.world[grid_pos[0]][grid_pos[1]]["empty"] = True
                 self.world[grid_pos[0]][grid_pos[1]]["walkable"] = True
                 self.world[grid_pos[0]][grid_pos[1]]["user_built"] = False
