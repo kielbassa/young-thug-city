@@ -33,6 +33,7 @@ class Citizen:
         self.workplace = None
         self.workplace_grid_pos = None
         self.at_work = False
+        self.contributed_to_worker_count = False
         self.at_home = True
         self.is_visible = False
         self.wandering = False
@@ -64,7 +65,10 @@ class Citizen:
             factories.sort(key=lambda f: f[3])
             # Choose the factory with the lowest worker count
             self.workplace, workplace_pos, self.workplace_grid_pos, _ = factories[0]
-            self.workplace.worker_count += 1
+            if self.workplace.worker_count < self.workplace.worker_max_capacity:
+                self.workplace.worker_count += 1
+            else:
+                self.workplace, self.workplace_grid_pos = None, None
         else:
             # If no factory exists, citizen won't have a workplace
             self.workplace = None
@@ -132,20 +136,28 @@ class Citizen:
     def schedule(self, game_time):
         match game_time:
             case 7: # at 7 go to work
+                self.at_home = False
                 self.is_visible = True # make the citizen visible
                 self.wandering = False
                 self.find_workplace()
                 if self.workplace:
                     print(f"Workplace found at {self.workplace_grid_pos}, creating path")
+                    self.contributed_to_worker_count = False
                     self.create_path(self.workplace_grid_pos)
+                    self.at_work = True
                 else:
                     print(f"{self.name}, Workplace not found")
+                    self.wandering = True
                     self.create_path(None)
             case 16: # at 16 leave work and start wandering around
+                self.at_work = False
+                if self.workplace:
+                    self.workplace.worker_count_current -= 1
                 self.is_visible = True # make the citizen visible
                 self.wandering = True # set the wandering flag to True
                 self.create_path(None) # create a path with no destination
             case 20: # at 20 go home
+                self.at_home = True
                 self.wandering = False
                 self.create_path(self.home_grid_pos)
 
@@ -190,3 +202,6 @@ class Citizen:
                     self.create_path(None)
                 elif not self.is_moving:
                     self.is_visible = False
+                    if self.at_work and self.workplace and not self.contributed_to_worker_count:
+                        self.workplace.worker_count_current += 1
+                        self.contributed_to_worker_count = True

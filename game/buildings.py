@@ -34,7 +34,7 @@ class Buildings:
                 "thugoleons": 5000,
             },
             "residential_building": {
-                "thugoleons": 2500,
+                "thugoleons": 500,
             },
             "solar_panels": {
                 "electricity": 10,
@@ -63,7 +63,7 @@ class Buildings:
 class Factory(Buildings):
     def __init__(self, pos, resource_manager, world=None, grid_pos=None):
         image = pg.image.load("assets/graphics/factory.png")
-        resources = Buildings()
+        self.resources = Buildings()
         self.image = image
         self.name = "factory"
         self.rect = self.image.get_rect(topleft=pos)
@@ -72,17 +72,19 @@ class Factory(Buildings):
 
         # Track number of workers at this factory
         self.worker_count = 0
+        self.worker_max_capacity = 5
+        self.worker_count_current = 0
 
         # Cooldowns for resource generation and consumption
         self.production_cooldown = pg.time.get_ticks()
         self.consumption_cooldown = pg.time.get_ticks()
 
         # Resource consumption rates per second
-        self.electricity_consumption = resources.consumption["factory"]["electricity"]
-        self.water_consumption = resources.consumption["factory"]["water"]
+        self.electricity_consumption = self.resources.consumption["factory"]["electricity"]
+        self.water_consumption = self.resources.consumption["factory"]["water"]
 
         # Production rates per second
-        self.thugoleon_production_rate = resources.production["factory"]["thugoleons"]
+        self.thugoleon_production_rate = self.resources.production["factory"]["thugoleons"] / self.worker_max_capacity * self.worker_count_current
 
         # Store adjacent road position
         self.adjacent_road = None
@@ -94,6 +96,7 @@ class Factory(Buildings):
 
         # Production of thugoleons every second
         if now - self.production_cooldown >= 1000:
+            self.thugoleon_production_rate = self.resources.production["factory"]["thugoleons"] / self.worker_max_capacity * self.worker_count_current
             if (self.resource_manager.resources["electricity"] >= self.electricity_consumption and
                 self.resource_manager.resources["water"] >= self.water_consumption):
                     self.resource_manager.resources["thugoleons"] += self.thugoleon_production_rate
