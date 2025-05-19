@@ -65,9 +65,42 @@ class Citizen:
             factories.sort(key=lambda f: f[3])
             # Choose the factory with the lowest worker count
             self.workplace, workplace_pos, self.workplace_grid_pos, _ = factories[0]
-            if self.workplace.worker_count < self.workplace.worker_max_capacity:
-                self.workplace.worker_count += 1
+
+            ## Check if the factory is reachable for the citizen
+            road_tiles = []
+            for i in range(self.world.grid_length_x):
+                for j in range(self.world.grid_length_y):
+                    # Check if tile has a road on it
+                    if self.world.roads[i][j] is not None:
+                        road_tiles.append((i, j))
+
+            # Create temporary collision matrix
+            temp_collision_matrix = [row[:] for row in self.world.collision_matrix]
+
+            # Mark all non-road tiles as non-walkable
+            for i in range(self.world.grid_length_x):
+                for j in range(self.world.grid_length_y):
+                    if self.world.roads[i][j] is None:
+                        temp_collision_matrix[j][i] = 0
+
+            # Exception for current citizen's position
+            current_pos = self.tile["grid"]
+            temp_collision_matrix[current_pos[1]][current_pos[0]] = 1
+
+            self.grid = Grid(matrix=temp_collision_matrix) # collision matrix
+            self.start = self.grid.node(self.tile["grid"][0], self.tile["grid"][1])
+            self.end = self.grid.node(self.workplace_grid_pos[0], self.workplace_grid_pos[1]) # destination
+            finder = AStarFinder(diagonal_movement=DiagonalMovement.never)
+            path, runs = finder.find_path(self.start, self.end, self.grid)
+
+            if len(path) > 0: # if path is valid
+                print(f"{self.name} valid path to workplace of length {len(path)}")
+                if self.workplace.worker_count < self.workplace.worker_max_capacity:
+                    self.workplace.worker_count += 1
+                else:
+                    self.workplace, self.workplace_grid_pos = None, None
             else:
+                print(f"{self.name} has no valid path to workplace {self.workplace_grid_pos}")
                 self.workplace, self.workplace_grid_pos = None, None
         else:
             # If no factory exists, citizen won't have a workplace
@@ -112,7 +145,7 @@ class Citizen:
         finder = AStarFinder(diagonal_movement=DiagonalMovement.never)
         path, runs = finder.find_path(self.start, self.end, self.grid)
 
-        if len(path) > 0:
+        if len(path) > 0: # if path is valid
             self.path_index = 0
             self.path = path
             return
