@@ -207,7 +207,7 @@ class Solar_Panels(Buildings):
                 from .resource_agents import ResourceAgent
                 road_tile = world.world[self.adjacent_road[0]][self.adjacent_road[1]]
                 # Pass the grid position of the residential building as home_tile
-                ResourceAgent(road_tile, world, "electricity")
+                ResourceAgent(self.name, grid_pos, road_tile, world, "electricity")
 
     def update(self):
         now = pg.time.get_ticks()
@@ -262,7 +262,7 @@ class Water_Treatment_Plant(Buildings):
                 from .resource_agents import ResourceAgent
                 road_tile = world.world[self.adjacent_road[0]][self.adjacent_road[1]]
                 # Pass the grid position of the residential building as home_tile
-                ResourceAgent(road_tile, world, "water")
+                ResourceAgent(self.name, grid_pos, road_tile, world, "water")
 
     def update(self):
         now = pg.time.get_ticks()
