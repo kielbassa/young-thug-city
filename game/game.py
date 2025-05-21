@@ -47,6 +47,8 @@ class Game:
                     sys.exit()
                 if event.key == pg.K_DELETE or event.key == pg.K_BACKSPACE:
                     self.hud.delete_mode = not self.hud.delete_mode
+                if event.key == pg.K_a:
+                    self.world.show_agents = not self.world.show_agents
 
     def update(self):
         # Update game clock - 1 hour every 10 seconds
