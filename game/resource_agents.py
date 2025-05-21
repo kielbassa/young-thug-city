@@ -139,6 +139,8 @@ class ResourceAgent:
             return
 
     def change_road_tile(self, new_road_tile):
+        # update the current path if its no longer the correct one to the building with the lowest resource
+
         current_grid_pos = self.road_tile["grid"]
         # Remove agent from current road_tile
         if self.world.roads[new_road_tile[0]][new_road_tile[1]] is not None:
