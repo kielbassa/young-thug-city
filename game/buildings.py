@@ -70,6 +70,10 @@ class Factory(Buildings):
         self.resource_manager = resource_manager
         self.resource_manager.apply_cost_to_resource(self.name)
 
+        # Track a buildings stored resources
+        self.electricity = 0
+        self.water = 0
+
         # Track number of workers at this factory
         self.worker_count = 0
         self.worker_max_capacity = 5
@@ -97,19 +101,19 @@ class Factory(Buildings):
         # Production of thugoleons every second
         if now - self.production_cooldown >= 1000:
             self.thugoleon_production_rate = self.resources.production["factory"]["thugoleons"] / self.worker_max_capacity * self.worker_count_current
-            if (self.resource_manager.resources["electricity"] >= self.electricity_consumption and
-                self.resource_manager.resources["water"] >= self.water_consumption):
+            if (self.electricity >= self.electricity_consumption and
+                self.water >= self.water_consumption):
                     self.resource_manager.resources["thugoleons"] += self.thugoleon_production_rate
                     self.production_cooldown = now
 
         # Consumption of resources every second
         if now - self.consumption_cooldown >= 1000:
             # Only consume if there are enough resources
-            if (self.resource_manager.resources["electricity"] >= self.electricity_consumption and
-                self.resource_manager.resources["water"] >= self.water_consumption):
+            if (self.electricity >= self.electricity_consumption and
+                self.water >= self.water_consumption):
 
-                self.resource_manager.resources["electricity"] -= self.electricity_consumption
-                self.resource_manager.resources["water"] -= self.water_consumption
+                self.electricity -= self.electricity_consumption
+                self.water -= self.water_consumption
                 self.consumption_cooldown = now
 
 class Residential_Building(Buildings):
@@ -122,8 +126,9 @@ class Residential_Building(Buildings):
         self.resource_manager = resource_manager
         self.resource_manager.apply_cost_to_resource(self.name)
 
-        # Track number of workers at this factory
-        self.worker_count = 0
+        # Track a buildings stored resources
+        self.electricity = 0
+        self.water = 0
 
         # Cooldowns for resource generation and consumption
         self.production_cooldown = pg.time.get_ticks()
@@ -152,19 +157,19 @@ class Residential_Building(Buildings):
 
         # Production of thugoleons every second
         if now - self.production_cooldown >= 1000:
-            if (self.resource_manager.resources["electricity"] >= self.electricity_consumption and
-                self.resource_manager.resources["water"] >= self.water_consumption):
+            if (self.electricity >= self.electricity_consumption and
+                self.water >= self.water_consumption):
                     self.resource_manager.resources["thugoleons"] += self.thugoleon_production_rate
                     self.production_cooldown = now
 
         # Consumption of resources every second
         if now - self.consumption_cooldown >= 1000:
             # Only consume if there are enough resources
-            if (self.resource_manager.resources["electricity"] >= self.electricity_consumption and
-                self.resource_manager.resources["water"] >= self.water_consumption):
+            if (self.electricity >= self.electricity_consumption and
+                self.water >= self.water_consumption):
 
-                self.resource_manager.resources["electricity"] -= self.electricity_consumption
-                self.resource_manager.resources["water"] -= self.water_consumption
+                self.electricity -= self.electricity_consumption
+                self.water -= self.water_consumption
                 self.consumption_cooldown = now
 
 
@@ -177,6 +182,10 @@ class Solar_Panels(Buildings):
         self.rect = self.image.get_rect(topleft=pos)
         self.resource_manager = resource_manager
         self.resource_manager.apply_cost_to_resource(self.name)
+
+        # Track a buildings stored resources
+        self.electricity = 100 # start with 100 electricity
+        self.water = 0
 
         # Cooldowns for resource generation and consumption
         self.production_cooldown = pg.time.get_ticks()
@@ -198,24 +207,24 @@ class Solar_Panels(Buildings):
                 from .resource_agents import ResourceAgent
                 road_tile = world.world[self.adjacent_road[0]][self.adjacent_road[1]]
                 # Pass the grid position of the residential building as home_tile
-                ResourceAgent(road_tile, world)
+                ResourceAgent(road_tile, world, "electricity")
 
     def update(self):
         now = pg.time.get_ticks()
 
         # Production of resources every second
         if now - self.production_cooldown >= 1000:
-            if (self.resource_manager.resources["water"] >= self.water_consumption
+            if (self.water >= self.water_consumption
                 and self.resource_manager.resources["thugoleons"] >= self.thugoleon_consumption):
-                    self.resource_manager.resources["electricity"] += self.electricity_production_rate
+                    self.electricity += self.electricity_production_rate
                     self.production_cooldown = now
 
         # Consumption of resources every second
         if now - self.consumption_cooldown >= 1000:
             # Only consume if there are enough resources
-            if (self.resource_manager.resources["water"] >= self.water_consumption
+            if (self.water >= self.water_consumption
                 and self.resource_manager.resources["thugoleons"] >= self.thugoleon_consumption):
-                self.resource_manager.resources["water"] -= self.water_consumption
+                self.water -= self.water_consumption
                 self.resource_manager.resources["thugoleons"] -= self.thugoleon_consumption
                 self.consumption_cooldown = now
 
@@ -232,6 +241,10 @@ class Water_Treatment_Plant(Buildings):
         # Cooldowns for resource generation and consumption
         self.production_cooldown = pg.time.get_ticks()
         self.consumption_cooldown = pg.time.get_ticks()
+
+        # Track a buildings stored resources
+        self.electricity = 0
+        self.water = 100 # start with 100 water
 
         # Resource consumption rates per second
         self.electricity_consumption = resources.consumption["water_treatment_plant"]["electricity"]
@@ -250,16 +263,16 @@ class Water_Treatment_Plant(Buildings):
 
         # Production of resources every second
         if now - self.production_cooldown >= 1000:
-            if (self.resource_manager.resources["electricity"] >= self.electricity_consumption
+            if (self.electricity >= self.electricity_consumption
                 and self.resource_manager.resources["thugoleons"] >= self.thugoleon_consumption):
-                    self.resource_manager.resources["water"] += self.water_production_rate
+                    self.water += self.water_production_rate
                     self.production_cooldown = now
 
         # Consumption of resources every second
         if now - self.consumption_cooldown >= 1000:
             # Only consume if there are enough resources
-            if (self.resource_manager.resources["electricity"] >= self.electricity_consumption
+            if (self.electricity >= self.electricity_consumption
                 and self.resource_manager.resources["thugoleons"] >= self.thugoleon_consumption):
-                self.resource_manager.resources["electricity"] -= self.electricity_consumption
+                self.electricity -= self.electricity_consumption
                 self.resource_manager.resources["thugoleons"] -= self.thugoleon_consumption
                 self.consumption_cooldown = now
