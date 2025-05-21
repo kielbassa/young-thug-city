@@ -293,7 +293,7 @@ class World:
                             pg.draw.polygon(screen, (255, 255, 255), mask, 3)
 
                 # draw resource agents
-                agents_on_tile = self.citizens[x][y]
+                agents_on_tile = self.resource_agents[x][y]
                 for i, agent in enumerate(agents_on_tile):
                     # Add a small offset for each agent
                     x_offset = 0
