@@ -9,15 +9,17 @@ class ResourceAgent:
         """Initialize a resource agent object."""
         self.world = world
         self.world.entities.append(self) # add itself to entities for updating
-
-        image = pg.image.load("assets/graphics/resource_agent.png").convert_alpha()
+        if resource_type == "electricity":
+            image = pg.image.load("assets/graphics/agent_electricity.png").convert_alpha()
+        elif resource_type == "water":
+            image = pg.image.load("assets/graphics/agent_water.png").convert_alpha()
         self.name = f"agent_{random.randint(1, 1000)}"
         self.image = pg.transform.scale(image, (image.get_width()*2, image.get_height()*2))
         self.road_tile = road_tile
 
         # resource carrying
         self.resource_type = resource_type
-        self.carried_amount = 0
+        self.carried_amount = 100
         self.max_capacity = 100
         self.single_dropoff_amount = 10
 
@@ -25,7 +27,7 @@ class ResourceAgent:
         self.world.resource_agents[road_tile["grid"][0]][road_tile["grid"][1]].append(self)
 
         # Movement interpolation
-        self.movement_speed = 0.1  # Adjust this to control movement speed
+        self.movement_speed = 0.2  # Adjust this to control movement speed
         self.current_pos = pg.Vector2(road_tile["render_pos"][0], road_tile["render_pos"][1])
         self.target_pos = pg.Vector2(road_tile["render_pos"][0], road_tile["render_pos"][1])
         self.is_moving = False
@@ -42,9 +44,6 @@ class ResourceAgent:
 
         # movement and schedule timers
         self.move_timer = pg.time.get_ticks()
-
-        self.find_destination()
-        self.create_path(self.destination_grid_pos)
 
     def pathfinder(self, x, y, origin):
         ## Check if the destination is reachable for the agent
@@ -107,7 +106,7 @@ class ResourceAgent:
 
         else:
             # If no destination exists, agent won't have a destination
-            print(f"{self.name} no destination exists")
+            print(f"{self.name} no destinations found")
             self.destination = None
             self.destination_grid_pos = None
 
@@ -154,6 +153,9 @@ class ResourceAgent:
             self.create_path(new_road_tile)  # If going to the next road_tile fails, find a path there
 
     def update(self):
+        if self.destination is None:
+            self.find_destination()
+            self.create_path(self.destination_grid_pos)
         now = pg.time.get_ticks()
 
         # Handle movement interpolation
@@ -166,7 +168,7 @@ class ResourceAgent:
                 self.current_pos = self.target_pos.copy()
                 self.is_moving = False
 
-        if now - self.move_timer > 500 and not self.is_moving:
+        if now - self.move_timer > 250 and not self.is_moving:
             # Check if we have a valid path and haven't reached the end
             if self.path and self.path_index < len(self.path):
                 node = self.path[self.path_index]
@@ -175,7 +177,7 @@ class ResourceAgent:
                 # Only move if the destination has a road
                 if self.world.roads[new_pos[0]][new_pos[1]] is not None:
                     self.change_road_tile(new_pos)
-                    print(f"Path of length {len(self.path)}, done {self.path_index}")
+                    print(f"Path of length {len(self.path)}, done {self.path_index}, carrying {self.carried_amount} {self.resource_type}")
                     self.path_index += 1
                 else:
                     # If destination has no road, find new path
@@ -186,6 +188,8 @@ class ResourceAgent:
             if self.path_index == len(self.path) and self.is_moving:
                 if self.destination:
                     if self.destination_grid_pos == self.origin_grid_pos:
+                        self.destination = None
+                        self.destination_grid_pos = None
                         # replenish resource when reached the origin road_tile
                         if self.resource_type == "electricity":
                             resource_portion = min(self.origin.electricity, self.max_capacity)
@@ -217,4 +221,5 @@ class ResourceAgent:
                 else:
                     print(f"{self.name} no destination exists")
                     self.find_destination()
-                    self.create_path(self.destination_grid_pos)
+                    if self.destination and self.destination_grid_pos:
+                        self.create_path(self.destination_grid_pos)
