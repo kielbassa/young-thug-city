@@ -292,6 +292,31 @@ class World:
                                     ) for x, y in mask]
                             pg.draw.polygon(screen, (255, 255, 255), mask, 3)
 
+                # draw resource agents
+                agents_on_tile = self.citizens[x][y]
+                for i, agent in enumerate(agents_on_tile):
+                    # Add a small offset for each agent
+                    x_offset = 0
+                    y_offset = 0
+
+                    if len(agents_on_tile) >= 1:
+                        # Create a circular pattern around the center point
+                        radius = 12  # Radius of the circle
+                        angle = (i * 2 * 3.14159) / min(len(agents_on_tile), 8)  # Distribute evenly around the circle
+                        x_offset = int(radius * math.cos(angle))
+                        y_offset = int(radius * math.sin(angle))
+
+                        # For more than 8 agents, create an outer circle
+                        if i >= 8:
+                            outer_radius = 20
+                            outer_angle = ((i - 8) * 2 * 3.14159) / min(len(agents_on_tile) - 8, 12)
+                            x_offset = int(outer_radius * math.cos(outer_angle))
+                            y_offset = int(outer_radius * math.sin(outer_angle))
+
+                        screen.blit(agent.image,
+                                (agent.current_pos.x + self.grass_tiles.get_width()/2 + camera.scroll.x + x_offset,
+                                agent.current_pos.y - (agent.image.get_height() - 1.5*TILE_SIZE) + camera.scroll.y + y_offset))
+
                 # draw citizens
                 citizens_on_tile = self.citizens[x][y]
                 for i, citizen in enumerate(citizens_on_tile):
