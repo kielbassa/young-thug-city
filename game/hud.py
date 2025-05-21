@@ -202,6 +202,8 @@ class Hud:
                     'thugoleon_production_rate': getattr(self.examined_tile, 'thugoleon_production_rate', None),
                     'worker_count': getattr(self.examined_tile, 'worker_count', None),
                     'worker_count_current': getattr(self.examined_tile, 'worker_count_current', None),
+                    'electricity': getattr(self.examined_tile, 'electricity', None),
+                    'water': getattr(self.examined_tile, 'water', None)
                 }
                 if current_attrs != self.prev_examined_tile_attr:
                     self.select_cache_valid = False
@@ -278,6 +280,16 @@ class Hud:
             resource_y += TEXT_SIZE
             production_text = f"Current workers: {self.examined_tile.worker_count_current}"
             draw_text(self.cached_select_surface, production_text, TEXT_SIZE, (255, 255, 255), (resource_x, resource_y))
+            resource_y += TEXT_SIZE
+
+        if hasattr(self.examined_tile, 'electricity'):
+            text = f"Electricity available: {self.examined_tile.electricity}"
+            draw_text(self.cached_select_surface, text, TEXT_SIZE, (255, 255, 255), (resource_x, resource_y))
+            resource_y += TEXT_SIZE
+
+        if hasattr(self.examined_tile, 'water'):
+            text = f"Water available: {self.examined_tile.water}"
+            draw_text(self.cached_select_surface, text, TEXT_SIZE, (255, 255, 255), (resource_x, resource_y))
             resource_y += TEXT_SIZE
 
         # Add building description if available
