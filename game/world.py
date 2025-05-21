@@ -43,6 +43,7 @@ class World:
         # citizen list for every grid tile
         self.citizens = [[[] for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
         self.resource_agents = [[[] for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
+        self.show_agents = True
 
         # tile variables for hud
         self.temp_tile = None
@@ -313,8 +314,9 @@ class World:
                             x_offset = int(outer_radius * math.cos(outer_angle))
                             y_offset = int(outer_radius * math.sin(outer_angle))
 
-                        screen.blit(agent.image,
-                                (agent.current_pos.x + self.grass_tiles.get_width()/2 + camera.scroll.x + x_offset + 20,
+                        if self.show_agents:
+                            screen.blit(agent.image,
+                                    (agent.current_pos.x + self.grass_tiles.get_width()/2 + camera.scroll.x + x_offset + 20,
                                 agent.current_pos.y - (agent.image.get_height() - 1.5*TILE_SIZE) + camera.scroll.y + y_offset-15))
 
                 # draw citizens
