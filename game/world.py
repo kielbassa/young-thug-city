@@ -42,6 +42,7 @@ class World:
         self.roads = [[None for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
         # citizen list for every grid tile
         self.citizens = [[[] for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
+        self.resource_agents = [[[] for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
 
         # tile variables for hud
         self.temp_tile = None
