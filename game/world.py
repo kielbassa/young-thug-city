@@ -314,8 +314,8 @@ class World:
                             y_offset = int(outer_radius * math.sin(outer_angle))
 
                         screen.blit(agent.image,
-                                (agent.current_pos.x + self.grass_tiles.get_width()/2 + camera.scroll.x + x_offset,
-                                agent.current_pos.y - (agent.image.get_height() - 1.5*TILE_SIZE) + camera.scroll.y + y_offset))
+                                (agent.current_pos.x + self.grass_tiles.get_width()/2 + camera.scroll.x + x_offset + 20,
+                                agent.current_pos.y - (agent.image.get_height() - 1.5*TILE_SIZE) + camera.scroll.y + y_offset-15))
 
                 # draw citizens
                 citizens_on_tile = self.citizens[x][y]
