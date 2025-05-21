@@ -174,12 +174,13 @@ class Residential_Building(Buildings):
 
 
 class Solar_Panels(Buildings):
-    def __init__(self, pos, resource_manager, world=None, grid_pos=None):
+    def __init__(self, pos, resource_manager, world, grid_pos):
         image = pg.image.load("assets/graphics/solar_panels.png")
         self.image = image
         resources = Buildings()
         self.name = "solar_panels"
-        self.rect = self.image.get_rect(topleft=pos)
+        self.grid_pos = grid_pos
+        self.rect = self.image.get_rect(topleft=grid_pos)
         self.resource_manager = resource_manager
         self.resource_manager.apply_cost_to_resource(self.name)
 
@@ -229,13 +230,14 @@ class Solar_Panels(Buildings):
                 self.consumption_cooldown = now
 
 class Water_Treatment_Plant(Buildings):
-    def __init__(self, pos, resource_manager, world=None, grid_pos=None):
+    def __init__(self, pos, resource_manager, world, grid_pos):
         image = pg.image.load("assets/graphics/water_treatment_plant.png")
         self.image = image
         resources = Buildings()
         self.name = "water_treatment_plant"
         self.rect = self.image.get_rect(topleft=pos)
         self.resource_manager = resource_manager
+        self.grid_pos = grid_pos
         self.resource_manager.apply_cost_to_resource(self.name)
 
         # Cooldowns for resource generation and consumption

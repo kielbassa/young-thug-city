@@ -22,12 +22,13 @@ class ResourceAgent:
         self.carried_amount = 100
         self.max_capacity = 100
         self.single_dropoff_amount = 10
+        self.replenishing = False
 
         # pathfinding
         self.world.resource_agents[road_tile["grid"][0]][road_tile["grid"][1]].append(self)
 
         # Movement interpolation
-        self.movement_speed = 0.2  # Adjust this to control movement speed
+        self.movement_speed = 0.1  # Adjust this to control movement speed
         self.current_pos = pg.Vector2(road_tile["render_pos"][0], road_tile["render_pos"][1])
         self.target_pos = pg.Vector2(road_tile["render_pos"][0], road_tile["render_pos"][1])
         self.is_moving = False
@@ -36,6 +37,7 @@ class ResourceAgent:
         self.grid = Grid(matrix=self.world.collision_matrix)
 
         # initialize schedule variables
+        self.origin_pos = origin_pos
         self.origin_grid_pos = road_tile["grid"]
         self.origin = self.world.buildings[origin_pos[0]][origin_pos[1]]
         self.origin_name = origin_name
@@ -168,7 +170,7 @@ class ResourceAgent:
                 self.current_pos = self.target_pos.copy()
                 self.is_moving = False
 
-        if now - self.move_timer > 250 and not self.is_moving:
+        if now - self.move_timer > 500 and not self.is_moving:
             # Check if we have a valid path and haven't reached the end
             if self.path and self.path_index < len(self.path):
                 node = self.path[self.path_index]
@@ -187,21 +189,26 @@ class ResourceAgent:
             # Reaching destination
             if self.path_index == len(self.path) and self.is_moving:
                 if self.destination:
-                    if self.destination_grid_pos == self.origin_grid_pos:
+                    if self.replenishing:
+                        self.origin = self.world.buildings[self.origin_pos[0]][self.origin_pos[1]]
+                        print(f"{self.name} reached the origin road_tile")
                         self.destination = None
                         self.destination_grid_pos = None
                         # replenish resource when reached the origin road_tile
                         if self.resource_type == "electricity":
-                            resource_portion = min(self.origin.electricity, self.max_capacity)
+                            resource_portion = min(getattr(self.origin, 'electricity'), self.max_capacity - self.carried_amount)
                             self.carried_amount += resource_portion
                             self.origin.electricity -= resource_portion
+                            print(f"{self.name} replenished {resource_portion} electricity, now carrying {self.carried_amount}")
                         elif self.resource_type == "water":
-                            resource_portion = min(self.origin.water, self.max_capacity)
+                            resource_portion = min(getattr(self.origin, 'water'), self.max_capacity - self.carried_amount)
                             self.carried_amount += resource_portion
                             self.origin.water -= resource_portion
-                        print(f"{self.name} replenished {self.resource_type}, carrying {self.carried_amount}")
-                        self.find_destination() # find a new destination and create a path there
-                        self.create_path(self.destination_grid_pos)
+                            print(f"{self.name} replenished {resource_portion} water, now carrying {self.carried_amount}")
+                        self.replenishing = False
+                        self.find_destination()  # find a new destination and create a path there
+                        if self.destination and self.destination_grid_pos:
+                            self.create_path(self.destination_grid_pos)
                     else:
                         # give the destination building a part of the carried resource
                         resource_portion = min(self.carried_amount, self.single_dropoff_amount) # resource portion to give away to the destination building, cant be more than the amount carried
@@ -214,6 +221,7 @@ class ResourceAgent:
                         print(f"{self.name} delivered {resource_portion} of {self.resource_type} to {self.destination}, carrying {self.carried_amount}")
                         if self.carried_amount < self.single_dropoff_amount:
                             # create a path to the origin road_tile for resource replenishment
+                            self.replenishing = True
                             self.create_path(self.origin_grid_pos)
                         else:
                             self.find_destination() # find a new destination and create a path there
