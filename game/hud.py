@@ -83,7 +83,11 @@ class Hud:
                     'thugoleon_consumption': getattr(self.examined_tile, 'thugoleon_consumption', None),
                     'electricity_production_rate': getattr(self.examined_tile, 'electricity_production_rate', None),
                     'water_production_rate': getattr(self.examined_tile, 'water_production_rate', None),
-                    'thugoleon_production_rate': getattr(self.examined_tile, 'thugoleon_production_rate', None)
+                    'thugoleon_production_rate': getattr(self.examined_tile, 'thugoleon_production_rate', None),
+                    'worker_count': getattr(self.examined_tile, 'worker_count', None),
+                    'worker_count_current': getattr(self.examined_tile, 'worker_count_current', None),
+                    'electricity': getattr(self.examined_tile, 'electricity', None),
+                    'water': getattr(self.examined_tile, 'water', None)
                 }
 
         for tile in self.tiles:

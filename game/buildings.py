@@ -113,7 +113,9 @@ class Factory(Buildings):
                 self.water >= self.water_consumption):
 
                 self.electricity -= self.electricity_consumption
+                self.resource_manager.resources["electricity"] -= self.electricity_consumption
                 self.water -= self.water_consumption
+                self.resource_manager.resources["water"] -= self.water_consumption
                 self.consumption_cooldown = now
 
 class Residential_Building(Buildings):
@@ -169,7 +171,9 @@ class Residential_Building(Buildings):
                 self.water >= self.water_consumption):
 
                 self.electricity -= self.electricity_consumption
+                self.resource_manager.resources["electricity"] -= self.electricity_consumption
                 self.water -= self.water_consumption
+                self.resource_manager.resources["water"] -= self.water_consumption
                 self.consumption_cooldown = now
 
 
@@ -218,6 +222,7 @@ class Solar_Panels(Buildings):
             if (self.water >= self.water_consumption
                 and self.resource_manager.resources["thugoleons"] >= self.thugoleon_consumption):
                     self.electricity += self.electricity_production_rate
+                    self.resource_manager.resources["electricity"] += self.electricity_production_rate
                     self.production_cooldown = now
 
         # Consumption of resources every second
@@ -226,6 +231,7 @@ class Solar_Panels(Buildings):
             if (self.water >= self.water_consumption
                 and self.resource_manager.resources["thugoleons"] >= self.thugoleon_consumption):
                 self.water -= self.water_consumption
+                self.resource_manager.resources["water"] -= self.water_consumption
                 self.resource_manager.resources["thugoleons"] -= self.thugoleon_consumption
                 self.consumption_cooldown = now
 
@@ -274,6 +280,7 @@ class Water_Treatment_Plant(Buildings):
             if (self.electricity >= self.electricity_consumption
                 and self.resource_manager.resources["thugoleons"] >= self.thugoleon_consumption):
                     self.water += self.water_production_rate
+                    self.resource_manager.resources["water"] += self.water_production_rate
                     self.production_cooldown = now
 
         # Consumption of resources every second
@@ -282,5 +289,6 @@ class Water_Treatment_Plant(Buildings):
             if (self.electricity >= self.electricity_consumption
                 and self.resource_manager.resources["thugoleons"] >= self.thugoleon_consumption):
                 self.electricity -= self.electricity_consumption
+                self.resource_manager.resources["electricity"] -= self.electricity_consumption
                 self.resource_manager.resources["thugoleons"] -= self.thugoleon_consumption
                 self.consumption_cooldown = now
