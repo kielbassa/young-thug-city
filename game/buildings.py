@@ -257,6 +257,12 @@ class Water_Treatment_Plant(Buildings):
         self.adjacent_road = None
         if world and grid_pos:
             self.find_adjacent_road(world, grid_pos)
+            # Spawn a resource agent on the adjacent road
+            if self.adjacent_road:
+                from .resource_agents import ResourceAgent
+                road_tile = world.world[self.adjacent_road[0]][self.adjacent_road[1]]
+                # Pass the grid position of the residential building as home_tile
+                ResourceAgent(road_tile, world, "water")
 
     def update(self):
         now = pg.time.get_ticks()
