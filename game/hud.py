@@ -225,7 +225,7 @@ class Hud:
 
         img = self.examined_tile.image.copy()
         img_scale = self.scale_image(img, h=h * 0.7)
-        self.cached_select_surface.blit(img_scale, (85, h * 0.05 + 45))
+        self.cached_select_surface.blit(img_scale, (65, h * 0.05 + 85))
 
         # Add building name
         draw_text(self.cached_select_surface, self.examined_tile.name.replace('_', ' ').title(), TEXT_SIZE*1.5 , (255, 255, 255),
@@ -258,7 +258,6 @@ class Hud:
             resource_y += TEXT_SIZE
 
         # Production section
-        resource_y += TEXT_SIZE  # Add some spacing
         draw_text(self.cached_select_surface, "Production:", TEXT_SIZE, (180, 255, 180), (resource_x, resource_y))
         resource_y += TEXT_SIZE
 
@@ -279,12 +278,11 @@ class Hud:
             resource_y += TEXT_SIZE
 
         if hasattr(self.examined_tile, 'worker_count') and hasattr(self.examined_tile, 'worker_max_capacity'):
-            production_text = f"Workers: {self.examined_tile.worker_count}/{self.examined_tile.worker_max_capacity}"
+            production_text = f"Current workers: {self.examined_tile.worker_count_current} / {self.examined_tile.worker_count}"
             draw_text(self.cached_select_surface, production_text, TEXT_SIZE, (255, 255, 255), (resource_x, resource_y))
             resource_y += TEXT_SIZE
-            production_text = f"Current workers: {self.examined_tile.worker_count_current}"
-            draw_text(self.cached_select_surface, production_text, TEXT_SIZE, (255, 255, 255), (resource_x, resource_y))
-            resource_y += TEXT_SIZE
+
+        # storage section
 
         if hasattr(self.examined_tile, 'electricity'):
             text = f"Electricity available: {self.examined_tile.electricity}"
