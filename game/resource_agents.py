@@ -101,10 +101,11 @@ class ResourceAgent:
             path, runs = self.pathfinder(self.destination_grid_pos[0], self.destination_grid_pos[1], self.road_tile["grid"])
 
             if len(path) <= 0: # if path is invalid
-                print(f"{self.name} has no valid path to destination {self.destination_grid_pos}")
+                # print(f"{self.name} has no valid path to destination {self.destination_grid_pos}")
                 self.destination, self.destination_grid_pos = None, None
             else:
-                print(f"{self.name} valid path to destination of length {len(path)}")
+                pass
+                # print(f"{self.name} valid path to destination of length {len(path)}")
 
         else:
             # If no destination exists, agent won't have a destination
@@ -151,7 +152,7 @@ class ResourceAgent:
             self.world.resource_agents[new_road_tile[0]][new_road_tile[1]].append(self)
             self.road_tile = self.world.world[new_road_tile[0]][new_road_tile[1]]
             self.target_pos = pg.Vector2(self.road_tile["render_pos"][0], self.road_tile["render_pos"][1])
-            print(f"{self.name} moved to new road_tile : {current_grid_pos}->{new_road_tile}")
+            # print(f"{self.name} moved to new road_tile : {current_grid_pos}->{new_road_tile}")
         else:
             print(f"{self.name} couldn't move to new road_tile, created a new path to {new_road_tile} instead")
             self.create_path(new_road_tile)  # If going to the next road_tile fails, find a path there
@@ -181,7 +182,7 @@ class ResourceAgent:
                 # Only move if the destination has a road
                 if self.world.roads[new_pos[0]][new_pos[1]] is not None:
                     self.change_road_tile(new_pos)
-                    print(f"Path of length {len(self.path)}, done {self.path_index}, carrying {self.carried_amount} {self.resource_type}")
+                    # print(f"Path of length {len(self.path)}, done {self.path_index}, carrying {self.carried_amount} {self.resource_type}")
                     self.path_index += 1
                 else:
                     # If destination has no road, find new path
@@ -193,7 +194,7 @@ class ResourceAgent:
                 if self.destination:
                     if self.replenishing:
                         self.origin = self.world.buildings[self.origin_pos[0]][self.origin_pos[1]]
-                        print(f"{self.name} reached the origin road_tile")
+                        # print(f"{self.name} reached the origin road_tile")
                         self.destination = None
                         self.destination_grid_pos = None
                         # replenish resource when reached the origin road_tile
@@ -201,12 +202,12 @@ class ResourceAgent:
                             resource_portion = min(getattr(self.origin, 'electricity'), self.max_capacity - self.carried_amount)
                             self.carried_amount += resource_portion
                             self.origin.electricity -= resource_portion
-                            print(f"{self.name} replenished {resource_portion} electricity, now carrying {self.carried_amount}")
+                            # print(f"{self.name} replenished {resource_portion} electricity, now carrying {self.carried_amount}")
                         elif self.resource_type == "water":
                             resource_portion = min(getattr(self.origin, 'water'), self.max_capacity - self.carried_amount)
                             self.carried_amount += resource_portion
                             self.origin.water -= resource_portion
-                            print(f"{self.name} replenished {resource_portion} water, now carrying {self.carried_amount}")
+                            # print(f"{self.name} replenished {resource_portion} water, now carrying {self.carried_amount}")
                         self.replenishing = False
                         self.find_destination()  # find a new destination and create a path there
                         if self.destination and self.destination_grid_pos:
@@ -220,7 +221,7 @@ class ResourceAgent:
                         elif self.resource_type == "water":
                             self.destination.water += resource_portion
                             self.carried_amount -= resource_portion
-                        print(f"{self.name} delivered {resource_portion} of {self.resource_type} to {self.destination}, carrying {self.carried_amount}")
+                        # print(f"{self.name} delivered {resource_portion} of {self.resource_type} to {self.destination}, carrying {self.carried_amount}")
                         if self.carried_amount < self.single_dropoff_amount:
                             # create a path to the origin road_tile for resource replenishment
                             self.replenishing = True
