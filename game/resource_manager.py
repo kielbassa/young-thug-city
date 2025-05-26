@@ -13,7 +13,7 @@ class ResourceManager:
             "citizens": 0
         }
 
-        # costs
+        # costs to build
         self.costs = {
             "factory": {"thugoleons": 10000},
             "residential_building": {"thugoleons": 5000, "citizens": -1},

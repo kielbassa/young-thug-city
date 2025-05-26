@@ -74,7 +74,7 @@ class Hud:
             self.select_cache_valid = False
             self.last_examined_tile = self.examined_tile
 
-            # Store current attribute values for deeper comparison
+            # Store current attribute values for cache comparison
             if self.examined_tile is not None:
                 self.prev_examined_tile_attr = {
                     'name': getattr(self.examined_tile, 'name', None),
@@ -194,7 +194,7 @@ class Hud:
     def draw_select_hud(self, screen):
         # Use cached surface if valid
         if self.select_cache_valid and self.examined_tile == self.last_examined_tile:
-            # Do deeper attribute comparison to ensure nothing changed
+            # Do attribute comparison to ensure nothing changed
             if self.examined_tile is not None:
                 current_attrs = {
                     'name': getattr(self.examined_tile, 'name', None),

@@ -20,7 +20,7 @@ class World:
         self.width = width
         self.height = height
 
-        # Set seed
+        # Set random seed
         self.seed = seed if seed is not None else random.randint(0, 999999)
         random.seed(self.seed)
 
@@ -31,7 +31,7 @@ class World:
         self.animation_speed = 0.2  # Controls how fast frames change
         self.animation_timer = 0
         self.water_frames = self.load_water_frames()
-        
+
         # Warning animation variables
         self.warning_bounce = 0
         self.warning_direction = 1  # 1 for up, -1 for down
@@ -46,7 +46,6 @@ class World:
         # grid maps of objects
         self.buildings = [[None for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
         self.roads = [[None for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
-        # citizen list for every grid tile
         self.citizens = [[[] for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
         self.resource_agents = [[[] for x in range(self.grid_length_x)] for y in range(self.grid_length_y)]
         self.show_agents = True
@@ -88,7 +87,7 @@ class World:
         if self.animation_timer >= self.animation_speed:
             self.animation_frame = (self.animation_frame + 1) % len(self.water_frames)
             self.animation_timer = 0
-            
+
         # Update warning bounce animation
         self.warning_bounce += self.warning_direction * self.warning_speed * clock.get_time() / 10
         if self.warning_bounce >= self.warning_max_bounce:
@@ -299,7 +298,7 @@ class World:
                     building_x = render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x
                     building_y = render_pos[1] - (building.image.get_height() - 2 * TILE_SIZE) + camera.scroll.y
                     screen.blit(building.image, (building_x, building_y))
-                    
+
                     # Check if building has enough resources and draw warning if not
                     if hasattr(building, 'check_has_resources') and not building.check_has_resources():
                         # Factory has warning_image directly, other buildings through resources
@@ -308,13 +307,13 @@ class World:
                             warning_image = building.warning_image
                         elif hasattr(building, 'resources') and hasattr(building.resources, 'warning_image'):
                             warning_image = building.resources.warning_image
-                            
+
                         if warning_image:
                             # Position the warning image above the building with bouncing animation
                             warning_x = building_x + building.image.get_width() // 2 - warning_image.get_width() // 2
                             warning_y = building_y - 30 + self.warning_bounce  # Offset above the building with bounce
                             screen.blit(warning_image, (warning_x, warning_y))
-                    
+
                     if self.examine_tile is not None:
                         if (x==self.examine_tile[0] and y==self.examine_tile[1]):
                             mask = pg.mask.from_surface(building.image).outline()
@@ -403,8 +402,11 @@ class World:
                             render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
                             render_pos[1] - (self.temp_tile["image"].get_height() - 2 * TILE_SIZE) + camera.scroll.y)
                         )
+        # draw the day/night cycle overlay
+        self.day_night_cycle(screen, game_time)
 
-        # Define sunrise and sunset times
+    def day_night_cycle(self, screen, game_time):
+        # sunrise and sunset times
         sunrise_start = 5   # 5:00 AM
         sunrise_end = 7     # 7:00 AM
         sunset_start = 18   # 6:00 PM
@@ -475,7 +477,6 @@ class World:
             for grid_y in range(self.grid_length_y):
                 world_tile = self.grid_to_world(grid_x, grid_y)
                 world[grid_x].append(world_tile)
-
                 render_pos = world_tile["render_pos"]
                 self.grass_tiles.blit(self.tiles["block"], (render_pos[0] + self.grass_tiles.get_width()/2, render_pos[1]))
         return world
@@ -497,7 +498,7 @@ class World:
         base_x = grid_x + self.seed * 0.1
         base_y = grid_y + self.seed * 0.1
 
-        # Initialize Perlin noise generators
+        # Perlin noise generators
         elevation_noise = noise.PerlinNoise(octaves=1, seed=int(self.seed))
         moisture_noise = noise.PerlinNoise(octaves=2, seed=int(self.seed + 1))
 
@@ -534,10 +535,10 @@ class World:
             elif moisture > 0.6 and elevation < 0.7:
                 tile = "trees"
             else:
-                if random_variation < 0.04:  # 4% chance
+                if random_variation < 0.04:
                     if moisture > 0.4:
                         tile = "trees"
-                    elif elevation > 0.58:
+                    elif elevation > 0.58: # interpret higher elevation as rocks
                         tile = "rock"
                     else:
                         tile = ""

@@ -44,7 +44,7 @@ class ResourceAgent:
         self.destination = None
         self.destination_grid_pos = None
 
-        # movement and schedule timers
+        # movement timers
         self.move_timer = pg.time.get_ticks()
 
     def pathfinder(self, x, y, origin):
@@ -52,7 +52,7 @@ class ResourceAgent:
         road_road_tiles = []
         for i in range(self.world.grid_length_x):
             for j in range(self.world.grid_length_y):
-                # Check if road_tile has a road on it
+                # Check if the tile has a road on it
                 if self.world.roads[i][j] is not None:
                     road_road_tiles.append((i, j))
 
@@ -90,12 +90,12 @@ class ResourceAgent:
                         destinations.append((building, (x, y), building.adjacent_road, building.electricity, building.water))
 
         if destinations:
-            # Sort factories by worker count (lowest first)
+            # Sort buildings by resource
             if self.resource_type == "electricity":
                 destinations.sort(key=lambda f: f[3])
             elif self.resource_type == "water":
                 destinations.sort(key=lambda f: f[4])
-            # Choose the factory with the resource count
+            # Choose the building with the lowest resource count
             self.destination, destination_pos, self.destination_grid_pos, _, _ = destinations[0]
 
             path, runs = self.pathfinder(self.destination_grid_pos[0], self.destination_grid_pos[1], self.road_tile["grid"])
@@ -140,8 +140,6 @@ class ResourceAgent:
             return
 
     def change_road_tile(self, new_road_tile):
-        # update the current path if its no longer the correct one to the building with the lowest resource
-
         current_grid_pos = self.road_tile["grid"]
         # Remove agent from current road_tile
         if self.world.roads[new_road_tile[0]][new_road_tile[1]] is not None:
@@ -149,7 +147,7 @@ class ResourceAgent:
             self.is_moving = True
             if self.world.resource_agents[new_road_tile[0]][new_road_tile[1]] is None:
                 self.world.resource_agents[new_road_tile[0]][new_road_tile[1]] = []
-            self.world.resource_agents[new_road_tile[0]][new_road_tile[1]].append(self)
+            self.world.resource_agents[new_road_tile[0]][new_road_tile[1]].append(self) # add agent to new tile
             self.road_tile = self.world.world[new_road_tile[0]][new_road_tile[1]]
             self.target_pos = pg.Vector2(self.road_tile["render_pos"][0], self.road_tile["render_pos"][1])
             # print(f"{self.name} moved to new road_tile : {current_grid_pos}->{new_road_tile}")

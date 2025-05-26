@@ -1,5 +1,8 @@
 import pygame as pg
 
+from game.utils import draw_text
+from .settings import TEXT_SIZE
+
 class Menu:
     def __init__(self, screen, clock):
         self.screen = screen
@@ -46,11 +49,9 @@ class Menu:
                 self.screen.blit(self.splash_img, (self.img_x, self.img_y))
 
             # Draw title text
-            font = pg.font.SysFont(None, 74)
-            text = font.render('Welcome to Young Thug City', True, (255, 255, 255))
-            text_rect = text.get_rect(center=(self.screen.get_width()/2,
-                                            self.screen.get_height()/2 + 50))  # Position below image
-            self.screen.blit(text, text_rect)
+            text = "Welcome to Young Thug City"
+            draw_text(self.screen, text, TEXT_SIZE * 3, (255,255,255), (self.screen.get_width()/2 - (len(text) * (TEXT_SIZE+4))/2,
+                                            self.screen.get_height()/2))
 
             # Get mouse position and check for hover
             mouse_pos = pg.mouse.get_pos()
@@ -81,7 +82,6 @@ class Menu:
                         return True  # Signal to start game
                 elif event.type == pg.KEYDOWN:
                     if event.key == pg.K_ESCAPE:
-                        self.click_sound.play()
                         return False  # Signal to quit game
 
             self.clock.tick(60)

@@ -20,7 +20,7 @@ class Citizen:
         self.world.citizens[tile["grid"][0]][tile["grid"][1]].append(self)
 
         # Movement interpolation
-        self.movement_speed = 0.1  # Adjust this to control movement speed
+        self.movement_speed = 0.1  # Adjust this to control movement speed, is glitchy
         self.current_pos = pg.Vector2(tile["render_pos"][0], tile["render_pos"][1])
         self.target_pos = pg.Vector2(tile["render_pos"][0], tile["render_pos"][1])
         self.is_moving = False
@@ -45,7 +45,7 @@ class Citizen:
         self.create_path(tile["grid"])
 
     def pathfinder(self, x, y, origin):
-        ## Check if the factory is reachable for the citizen
+        # Check if the factory is reachable for the citizen
         road_tiles = []
         for i in range(self.world.grid_length_x):
             for j in range(self.world.grid_length_y):
@@ -146,7 +146,7 @@ class Citizen:
             self.is_moving = True
             if self.world.citizens[new_tile[0]][new_tile[1]] is None:
                 self.world.citizens[new_tile[0]][new_tile[1]] = []
-            self.world.citizens[new_tile[0]][new_tile[1]].append(self)
+            self.world.citizens[new_tile[0]][new_tile[1]].append(self) # add citizen to new tile
             self.tile = self.world.world[new_tile[0]][new_tile[1]]
             self.target_pos = pg.Vector2(self.tile["render_pos"][0], self.tile["render_pos"][1])
             # print(f"{self.name} moved to new tile : {current_grid_pos}->{new_tile}")

@@ -2,7 +2,7 @@ import pygame as pg
 import sys
 import time
 from .world import World
-from .settings import WORLD_SIZE
+from .settings import WORLD_SIZE, TEXT_SIZE
 from .utils import draw_text
 from .camera import Camera
 from .hud import Hud
@@ -19,7 +19,7 @@ class Game:
         self.resource_manager = ResourceManager()
 
         # In-game clock (24-hour format)
-        self.game_time = 12  # hours (0-23)
+        self.game_time = 12  # starting hour
         self.real_time_last_hour = time.time()  # to track when to increase the hour
         self.hour_duration = 5  # seconds in real time for 1 in-game hour
 
@@ -45,13 +45,13 @@ class Game:
                 if event.key == pg.K_ESCAPE:
                     pg.quit()
                     sys.exit()
-                if event.key == pg.K_DELETE or event.key == pg.K_BACKSPACE:
+                if event.key == pg.K_DELETE or event.key == pg.K_BACKSPACE: # toggle delete mode
                     self.hud.delete_mode = not self.hud.delete_mode
-                if event.key == pg.K_a:
+                if event.key == pg.K_a: # toggle agent visibility
                     self.world.show_agents = not self.world.show_agents
 
     def update(self):
-        # Update game clock - 1 hour every 10 seconds
+        # Update game clock
         current_time = time.time()
         if current_time - self.real_time_last_hour >= self.hour_duration:
             self.game_time = (self.game_time + 1) % 24  # Loop back to 0 after 23
@@ -61,7 +61,7 @@ class Game:
         self.hud.game_time = self.game_time
 
         self.camera.update()
-        for entity in self.entities:
+        for entity in self.entities: # update every entity on the list
             entity.update()
         self.hud.update()
         self.world.update(self.clock, self.camera)
@@ -72,7 +72,7 @@ class Game:
         self.hud.draw(self.screen)
 
         # Draw FPS counter
-        draw_text(self.screen,"fps={}".format(round(self.clock.get_fps())),25,(0,255,0),(15, 15))
+        draw_text(self.screen,"fps={}".format(round(self.clock.get_fps())),TEXT_SIZE,(0,255,0),(15, 15))
 
         # camera scroll debug info
         # draw_text(self.screen,"camera position x={}".format(self.camera.scroll.x),25,(0,255,0),(15, 45))
