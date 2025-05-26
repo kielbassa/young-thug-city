@@ -30,17 +30,19 @@ class Buildings:
         }
 
         self.production = {
+            # constant production
             "factory": {
-                "thugoleons": 5000,
+                "thugoleons": 5000, # for max workers present
             },
             "residential_building": {
-                "thugoleons": 500,
+                "thugoleons": 750,
             },
+            # Multipliers of production
             "solar_panels": {
-                "electricity": 10,
+                "electricity": 16,
             },
             "water_treatment_plant": {
-                "water": 10,
+                "water": 16,
             },
         }
 
@@ -88,7 +90,7 @@ class Factory(Buildings):
         self.water_consumption = self.resources.consumption["factory"]["water"]
 
         # Production rates per second
-        self.thugoleon_production_rate = self.resources.production["factory"]["thugoleons"] / self.worker_max_capacity * self.worker_count_current
+        self.thugoleon_production_rate = (self.resources.production["factory"]["thugoleons"] / self.worker_max_capacity * self.worker_count_current) + 500
 
         # Store adjacent road position
         self.adjacent_road = None
@@ -189,7 +191,7 @@ class Solar_Panels(Buildings):
         self.resource_manager.apply_cost_to_resource(self.name)
 
         # Track a buildings stored resources
-        self.electricity = 100 # start with 100 electricity
+        self.electricity = 0 # start with 0 electricity
         self.water = 0
 
         # Cooldowns for resource generation and consumption
@@ -252,7 +254,7 @@ class Water_Treatment_Plant(Buildings):
 
         # Track a buildings stored resources
         self.electricity = 0
-        self.water = 100 # start with 100 water
+        self.water = 0 # start with 0 water
 
         # Resource consumption rates per second
         self.electricity_consumption = resources.consumption["water_treatment_plant"]["electricity"]
