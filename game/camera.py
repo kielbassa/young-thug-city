@@ -1,5 +1,5 @@
 import pygame as pg
-from .settings import CAMERA_SPEED
+from .settings import CAMERA_SPEED, TILE_SIZE, WORLD_SIZE
 
 class Camera:
     def __init__(self, width, height, hud):
@@ -7,13 +7,13 @@ class Camera:
         self.height = height
         self.hud = hud
 
-        self.scroll = pg.Vector2(-1300, -600)  # Initial scroll position
+        self.scroll = pg.Vector2(TILE_SIZE*WORLD_SIZE/-2, TILE_SIZE*WORLD_SIZE/-5)  # Initial scroll position
         self.dx = 0
         self.dy = 0
-        self.scroll_x_Max = 2400  # Max scroll distance in x direction
-        self.scroll_y_Max = 1250 # Max scroll distance in x direction
-        self.scroll_x_Min = -4950  # Min scroll distance in x direction
-        self.scroll_y_Min = -2400  # Min scroll distance in x direction
+        self.scroll_x_Max = 1700  # Max scroll distance in x direction
+        self.scroll_y_Max = 1000 # Max scroll distance in x direction
+        self.scroll_x_Min = -3600  # Min scroll distance in x direction
+        self.scroll_y_Min = -1800  # Min scroll distance in x direction
         self.max_speed = CAMERA_SPEED  # Max speed at edge
 
     def update(self):
