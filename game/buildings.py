@@ -35,7 +35,7 @@ class Buildings:
                 "thugoleons": 5000, # for max workers present
             },
             "residential_building": {
-                "thugoleons": 750,
+                "thugoleons": 500,
             },
             # Multipliers of production
             "solar_panels": {
