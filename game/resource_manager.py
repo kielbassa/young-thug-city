@@ -7,8 +7,8 @@ class ResourceManager:
 
         # starting resources
         self.resources = {
-            "electricity": 100,
-            "water": 100,
+            "electricity": 0,
+            "water": 0,
             "thugoleons": 1000000,
             "citizens": 0
         }
