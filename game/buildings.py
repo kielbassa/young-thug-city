@@ -9,6 +9,10 @@ class Buildings:
             "solar_panels": "Solar panels that generate electricity. Best to place on high altitude",
             "water_treatment_plant": "A water treatment plant that pumps, cleans and purifies water. Can only be placed on mud",
         }
+        
+        # For exclamation mark warning
+        from .warning import create_warning_image
+        self.warning_image = create_warning_image()
 
         self.consumption = {
             "factory": {
@@ -61,6 +65,11 @@ class Buildings:
                 if world.roads[nx][ny] is not None:
                     self.adjacent_road = (nx, ny)
                     return
+                    
+    def check_has_resources(self):
+        """Check if the building has enough resources to function"""
+        # Default implementation for base class - derived classes will override
+        return False  # Default to showing warning until actual resources are checked
 
 class Factory(Buildings):
     def __init__(self, pos, resource_manager, world=None, grid_pos=None):
@@ -71,6 +80,8 @@ class Factory(Buildings):
         self.rect = self.image.get_rect(topleft=pos)
         self.resource_manager = resource_manager
         self.resource_manager.apply_cost_to_resource(self.name)
+        # Get warning image from resources
+        self.warning_image = self.resources.warning_image
 
         # Track a buildings stored resources
         self.electricity = 0
@@ -119,6 +130,11 @@ class Factory(Buildings):
                 self.water -= self.water_consumption
                 self.resource_manager.resources["water"] -= self.water_consumption
                 self.consumption_cooldown = now
+                
+    def check_has_resources(self):
+        """Check if the factory has enough resources to function"""
+        return (self.electricity >= self.electricity_consumption and 
+                self.water >= self.water_consumption)
 
 class Residential_Building(Buildings):
     def __init__(self, pos, resource_manager, world=None, grid_pos=None):
@@ -129,6 +145,8 @@ class Residential_Building(Buildings):
         self.rect = self.image.get_rect(topleft=pos)
         self.resource_manager = resource_manager
         self.resource_manager.apply_cost_to_resource(self.name)
+        # Get warning image from resources
+        self.warning_image = resources.warning_image
 
         # Track a buildings stored resources
         self.electricity = 0
@@ -177,6 +195,11 @@ class Residential_Building(Buildings):
                 self.water -= self.water_consumption
                 self.resource_manager.resources["water"] -= self.water_consumption
                 self.consumption_cooldown = now
+                
+    def check_has_resources(self):
+        """Check if the residential building has enough resources to function"""
+        return (self.electricity >= self.electricity_consumption and 
+                self.water >= self.water_consumption)
 
 
 class Solar_Panels(Buildings):
@@ -189,6 +212,8 @@ class Solar_Panels(Buildings):
         self.rect = self.image.get_rect(topleft=grid_pos)
         self.resource_manager = resource_manager
         self.resource_manager.apply_cost_to_resource(self.name)
+        # Get warning image from resources
+        self.warning_image = resources.warning_image
 
         # Track a buildings stored resources
         self.electricity = 0 # start with 0 electricity
@@ -236,6 +261,11 @@ class Solar_Panels(Buildings):
                 self.resource_manager.resources["water"] -= self.water_consumption
                 self.resource_manager.resources["thugoleons"] -= self.thugoleon_consumption
                 self.consumption_cooldown = now
+                
+    def check_has_resources(self):
+        """Check if the solar panels have enough resources to function"""
+        return (self.water >= self.water_consumption and 
+                self.resource_manager.resources["thugoleons"] >= self.thugoleon_consumption)
 
 class Water_Treatment_Plant(Buildings):
     def __init__(self, pos, resource_manager, world, grid_pos):
@@ -247,6 +277,8 @@ class Water_Treatment_Plant(Buildings):
         self.resource_manager = resource_manager
         self.grid_pos = grid_pos
         self.resource_manager.apply_cost_to_resource(self.name)
+        # Get warning image from resources
+        self.warning_image = resources.warning_image
 
         # Cooldowns for resource generation and consumption
         self.production_cooldown = pg.time.get_ticks()
@@ -294,3 +326,8 @@ class Water_Treatment_Plant(Buildings):
                 self.resource_manager.resources["electricity"] -= self.electricity_consumption
                 self.resource_manager.resources["thugoleons"] -= self.thugoleon_consumption
                 self.consumption_cooldown = now
+                
+    def check_has_resources(self):
+        """Check if the water treatment plant has enough resources to function"""
+        return (self.electricity >= self.electricity_consumption and 
+                self.resource_manager.resources["thugoleons"] >= self.thugoleon_consumption)

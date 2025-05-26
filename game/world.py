@@ -31,6 +31,12 @@ class World:
         self.animation_speed = 0.2  # Controls how fast frames change
         self.animation_timer = 0
         self.water_frames = self.load_water_frames()
+        
+        # Warning animation variables
+        self.warning_bounce = 0
+        self.warning_direction = 1  # 1 for up, -1 for down
+        self.warning_speed = 0.1
+        self.warning_max_bounce = 3
 
         self.grass_tiles = pg.Surface((grid_length_x * TILE_SIZE * 2, grid_length_y * TILE_SIZE + 2 * TILE_SIZE)).convert_alpha()
         self.tiles = self.load_images()
@@ -82,6 +88,13 @@ class World:
         if self.animation_timer >= self.animation_speed:
             self.animation_frame = (self.animation_frame + 1) % len(self.water_frames)
             self.animation_timer = 0
+            
+        # Update warning bounce animation
+        self.warning_bounce += self.warning_direction * self.warning_speed * clock.get_time() / 10
+        if self.warning_bounce >= self.warning_max_bounce:
+            self.warning_direction = -1
+        elif self.warning_bounce <= -self.warning_max_bounce:
+            self.warning_direction = 1
 
         mouse_pos = pg.mouse.get_pos()
         mouse_action = pg.mouse.get_pressed()
@@ -282,9 +295,26 @@ class World:
                 # draw buildings
                 building = self.buildings[x][y]
                 if building is not None:
-                    screen.blit(building.image,
-                                (render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x,
-                                render_pos[1] - (building.image.get_height() - 2 * TILE_SIZE) + camera.scroll.y))
+                    # Draw the building image
+                    building_x = render_pos[0] + self.grass_tiles.get_width()/2 + camera.scroll.x
+                    building_y = render_pos[1] - (building.image.get_height() - 2 * TILE_SIZE) + camera.scroll.y
+                    screen.blit(building.image, (building_x, building_y))
+                    
+                    # Check if building has enough resources and draw warning if not
+                    if hasattr(building, 'check_has_resources') and not building.check_has_resources():
+                        # Factory has warning_image directly, other buildings through resources
+                        warning_image = None
+                        if hasattr(building, 'warning_image'):
+                            warning_image = building.warning_image
+                        elif hasattr(building, 'resources') and hasattr(building.resources, 'warning_image'):
+                            warning_image = building.resources.warning_image
+                            
+                        if warning_image:
+                            # Position the warning image above the building with bouncing animation
+                            warning_x = building_x + building.image.get_width() // 2 - warning_image.get_width() // 2
+                            warning_y = building_y - 30 + self.warning_bounce  # Offset above the building with bounce
+                            screen.blit(warning_image, (warning_x, warning_y))
+                    
                     if self.examine_tile is not None:
                         if (x==self.examine_tile[0] and y==self.examine_tile[1]):
                             mask = pg.mask.from_surface(building.image).outline()
