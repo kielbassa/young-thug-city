@@ -20,8 +20,8 @@ class ResourceAgent:
         # resource carrying
         self.resource_type = resource_type
         self.carried_amount = 100
-        self.max_capacity = 100
-        self.single_dropoff_amount = 10
+        self.max_capacity = 160
+        self.single_dropoff_amount = 24
         self.replenishing = False
 
         # pathfinding
