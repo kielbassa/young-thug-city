@@ -99,7 +99,7 @@ class Citizen:
             path, runs = self.pathfinder(self.workplace_grid_pos[0], self.workplace_grid_pos[1], self.tile["grid"])
 
             if len(path) > 0: # if path is valid
-                print(f"{self.name} valid path to workplace of length {len(path)}")
+                # print(f"{self.name} valid path to workplace of length {len(path)}")
                 if self.workplace.worker_count < self.workplace.worker_max_capacity:
                     self.workplace.worker_count += 1
                 else:
@@ -149,7 +149,7 @@ class Citizen:
             self.world.citizens[new_tile[0]][new_tile[1]].append(self)
             self.tile = self.world.world[new_tile[0]][new_tile[1]]
             self.target_pos = pg.Vector2(self.tile["render_pos"][0], self.tile["render_pos"][1])
-            print(f"{self.name} moved to new tile : {current_grid_pos}->{new_tile}")
+            # print(f"{self.name} moved to new tile : {current_grid_pos}->{new_tile}")
         else:
             print(f"{self.name} couldn't move to new tile, created a new path to {new_tile} instead")
             self.create_path(new_tile)  # If going to the next tile fails, find a path there
@@ -162,7 +162,7 @@ class Citizen:
                 self.wandering = False
                 self.find_workplace()
                 if self.workplace:
-                    print(f"Workplace found at {self.workplace_grid_pos}, creating path")
+                    # print(f"Workplace found at {self.workplace_grid_pos}, creating path")
                     self.contributed_to_worker_count = False
                     self.create_path(self.workplace_grid_pos)
                     self.at_work = True
@@ -210,7 +210,7 @@ class Citizen:
                 # Only move if the destination has a road
                 if self.world.roads[new_pos[0]][new_pos[1]] is not None:
                     self.change_tile(new_pos)
-                    print(f"Path of length {len(self.path)}, done {self.path_index}")
+                    # print(f"Path of length {len(self.path)}, done {self.path_index}")
                     self.path_index += 1
                 else:
                     # If destination has no road, find new path
